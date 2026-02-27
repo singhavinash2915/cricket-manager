@@ -72,7 +72,7 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter basename="/cricket-manager">
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
         <Routes>
           {/* Public routes - outside club context */}
           <Route path="/super-admin" element={<SuperAdmin />} />

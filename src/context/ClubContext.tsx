@@ -51,6 +51,26 @@ function generateColorVariables(hex: string): Record<string, string> {
   };
 }
 
+// Detect subdomain from the current hostname
+// e.g., punewarriors.cricmates.in → "punewarriors"
+function getSubdomain(): string | null {
+  const hostname = window.location.hostname;
+  // Skip for localhost, IP addresses, and GitHub Pages
+  if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname) || hostname.endsWith('.github.io')) {
+    return null;
+  }
+  const parts = hostname.split('.');
+  // e.g., ["punewarriors", "cricmates", "in"] → subdomain = "punewarriors"
+  // e.g., ["cricmates", "in"] → no subdomain (main domain)
+  if (parts.length > 2) {
+    const sub = parts[0];
+    // Ignore common non-club subdomains
+    if (['www', 'app', 'admin', 'api'].includes(sub)) return null;
+    return sub;
+  }
+  return null;
+}
+
 export function ClubProvider({ children }: { children: ReactNode }) {
   const [club, setClub] = useState<Club | null>(null);
   const [loading, setLoading] = useState(true);
@@ -112,7 +132,7 @@ export function ClubProvider({ children }: { children: ReactNode }) {
   const clearClub = useCallback(() => {
     localStorage.removeItem('cm-club-id');
     setClub(null);
-    document.title = 'Cricket Club Manager';
+    document.title = 'CricMates';
   }, []);
 
   const refreshClub = useCallback(async () => {
@@ -121,18 +141,39 @@ export function ClubProvider({ children }: { children: ReactNode }) {
     }
   }, [club, loadClub]);
 
-  // On mount, check URL query param first, then localStorage
+  // On mount, check subdomain → URL query param → localStorage
   useEffect(() => {
+    // 1. Check for subdomain (e.g., punewarriors.cricmates.in)
+    const subdomain = getSubdomain();
+    if (subdomain) {
+      // Look up club by short_name matching the subdomain
+      supabase
+        .from('clubs')
+        .select('id')
+        .ilike('short_name', subdomain)
+        .single()
+        .then(({ data }) => {
+          if (data) {
+            localStorage.setItem('cm-club-id', data.id);
+            loadClub(data.id);
+          } else {
+            setLoading(false);
+          }
+        });
+      return;
+    }
+
+    // 2. Check URL query param (for SuperAdmin eye button)
     const params = new URLSearchParams(window.location.search);
     const urlClubId = params.get('club');
     if (urlClubId) {
       localStorage.setItem('cm-club-id', urlClubId);
-      // Clean URL after reading the param
       window.history.replaceState({}, '', window.location.pathname);
       loadClub(urlClubId);
       return;
     }
 
+    // 3. Check localStorage
     const storedClubId = localStorage.getItem('cm-club-id');
     if (storedClubId) {
       loadClub(storedClubId);

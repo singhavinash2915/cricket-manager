@@ -56,7 +56,7 @@ const FAQS = [
   },
   {
     question: 'Can I get a custom domain for my club?',
-    answer: 'Custom subdomains (e.g., yourclub.cricketmanager.in) are coming soon. Currently all clubs are accessible via the main platform URL.',
+    answer: 'Yes! Each club gets a custom subdomain like yourclub.cricmates.in. Your club is automatically loaded when members visit your subdomain.',
   },
 ];
 
@@ -71,7 +71,7 @@ export function Pricing() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="w-7 h-7 text-emerald-500" />
-            <span className="text-lg font-bold text-gray-900 dark:text-gray-100">Cricket Club Manager</span>
+            <span className="text-lg font-bold text-gray-900 dark:text-gray-100">CricMates</span>
           </div>
           <a
             href="./"
@@ -93,7 +93,7 @@ export function Pricing() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a
-              href={`https://wa.me/${settings.contact.whatsapp}?text=${encodeURIComponent('Hi, I want to start a free trial for my cricket club on Cricket Club Manager.')}`}
+              href={`https://wa.me/${settings.contact.whatsapp}?text=${encodeURIComponent('Hi, I want to start a free trial for my cricket club on CricMates.')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 bg-white text-emerald-700 font-bold py-3 px-8 rounded-xl hover:bg-emerald-50 transition-colors text-lg"
@@ -159,7 +159,7 @@ export function Pricing() {
               </div>
 
               <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Cricket Club Manager</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">CricMates</h3>
                 <div className="flex items-baseline justify-center gap-1 mb-1">
                   <span className="text-4xl font-extrabold text-gray-900 dark:text-gray-100">₹{settings.pricing.setup_fee}</span>
                   <span className="text-gray-500 dark:text-gray-400 text-sm">one-time setup</span>
@@ -184,7 +184,7 @@ export function Pricing() {
 
               <div className="space-y-3">
                 <a
-                  href={`https://wa.me/${settings.contact.whatsapp}?text=${encodeURIComponent('Hi, I want to start a free trial for my cricket club on Cricket Club Manager.')}`}
+                  href={`https://wa.me/${settings.contact.whatsapp}?text=${encodeURIComponent('Hi, I want to start a free trial for my cricket club on CricMates.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-6 rounded-xl transition-colors"
@@ -193,7 +193,7 @@ export function Pricing() {
                   Start Free Trial
                 </a>
                 <a
-                  href={`https://wa.me/${settings.contact.whatsapp}?text=${encodeURIComponent(`Hi, I want to pay the setup fee (₹${settings.pricing.setup_fee}) and subscribe to Cricket Club Manager for my cricket club.`)}`}
+                  href={`https://wa.me/${settings.contact.whatsapp}?text=${encodeURIComponent(`Hi, I want to pay the setup fee (₹${settings.pricing.setup_fee}) and subscribe to CricMates for my cricket club.`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold py-3 px-6 rounded-xl transition-colors border border-gray-200 dark:border-gray-600"
@@ -268,7 +268,7 @@ export function Pricing() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Shield className="w-6 h-6 text-emerald-400" />
-            <span className="text-lg font-bold text-white">Cricket Club Manager</span>
+            <span className="text-lg font-bold text-white">CricMates</span>
           </div>
           <p className="text-sm mb-6">The complete cricket club management platform</p>
           <div className="flex items-center justify-center gap-6 text-sm">

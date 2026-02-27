@@ -10,7 +10,7 @@ const DEFAULT_PRICING: PlatformPricing = {
 
 const DEFAULT_CONTACT: PlatformContact = {
   whatsapp: '919876543210',
-  email: 'admin@cricketmanager.in',
+  email: 'admin@cricmates.in',
 };
 
 let cachedSettings: PlatformSettings | null = null;

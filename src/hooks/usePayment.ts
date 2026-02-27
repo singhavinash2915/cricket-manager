@@ -50,7 +50,7 @@ export function usePayment() {
           key: orderData.key_id,
           amount: orderData.amount,
           currency: orderData.currency,
-          name: club?.name || 'Cricket Club Manager',
+          name: club?.name || 'CricMates',
           description: `Balance deposit for ${memberName}`,
           order_id: orderData.order_id,
           handler: async (response: RazorpayPaymentResponse) => {
