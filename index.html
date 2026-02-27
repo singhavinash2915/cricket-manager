@@ -9,9 +9,10 @@
     <title>CricMates</title>
     <!-- Razorpay Checkout SDK -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <!-- GitHub Pages SPA redirect handler -->
+    <!-- GitHub Pages SPA redirect handler (only runs on github.io) -->
     <script type="text/javascript">
       (function(l) {
+        if (l.hostname.indexOf('github.io') === -1) return;
         if (l.search[1] === '/' ) {
           var decoded = l.search.slice(1).split('&').map(function(s) {
             return s.replace(/~and~/g, '&')
