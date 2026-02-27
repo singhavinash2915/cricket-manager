@@ -121,8 +121,18 @@ export function ClubProvider({ children }: { children: ReactNode }) {
     }
   }, [club, loadClub]);
 
-  // On mount, check if a club is stored in localStorage
+  // On mount, check URL query param first, then localStorage
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlClubId = params.get('club');
+    if (urlClubId) {
+      localStorage.setItem('cm-club-id', urlClubId);
+      // Clean URL after reading the param
+      window.history.replaceState({}, '', window.location.pathname);
+      loadClub(urlClubId);
+      return;
+    }
+
     const storedClubId = localStorage.getItem('cm-club-id');
     if (storedClubId) {
       loadClub(storedClubId);

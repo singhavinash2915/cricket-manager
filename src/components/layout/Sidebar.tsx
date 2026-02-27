@@ -16,7 +16,6 @@ import {
   Info,
   MessageSquare,
   CreditCard,
-  ArrowLeftRight,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useClub } from '../../context/ClubContext';
@@ -45,7 +44,7 @@ const adminNavItems = [
 
 export function Sidebar() {
   const { isAdmin, login, logout } = useAuth();
-  const { club, clearClub } = useClub();
+  const { club } = useClub();
   const { getPendingCount } = useRequests();
   const pendingCount = getPendingCount();
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -140,17 +139,8 @@ export function Sidebar() {
           )}
         </nav>
 
-        {/* Bottom section: Switch Club + Admin Login/Logout */}
+        {/* Bottom section: Admin Login/Logout */}
         <div className="px-4 py-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-          {/* Switch Club */}
-          <button
-            onClick={clearClub}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <ArrowLeftRight className="w-4 h-4" />
-            <span className="text-sm font-medium">Switch Club</span>
-          </button>
-
           {/* Admin Login/Logout */}
           {isAdmin ? (
             <button

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, CalendarDays, Trophy, Wallet, CreditCard, BarChart3, MessageSquare, Info, ArrowLeftRight } from 'lucide-react';
+import { X, UserPlus, Settings, Shield, Lock, LogOut, LayoutDashboard, Users, Calendar, CalendarDays, Trophy, Wallet, CreditCard, BarChart3, MessageSquare, Info } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useClub } from '../../context/ClubContext';
 import { useRequests } from '../../hooks/useRequests';
@@ -16,7 +16,7 @@ interface MobileMenuProps {
 
 export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const { isAdmin, login, logout } = useAuth();
-  const { club, clearClub } = useClub();
+  const { club } = useClub();
   const { getPendingCount } = useRequests();
   const pendingCount = getPendingCount();
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -37,11 +37,6 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
 
   const handleLogout = () => {
     logout();
-  };
-
-  const handleSwitchClub = () => {
-    onClose();
-    clearClub();
   };
 
   if (!isOpen) return null;
@@ -136,15 +131,6 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               </>
             )}
 
-            {/* Switch Club */}
-            <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-            <button
-              onClick={handleSwitchClub}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <ArrowLeftRight className="w-5 h-5" />
-              <span className="font-medium">Switch Club</span>
-            </button>
           </div>
 
           {/* Admin Login/Logout */}

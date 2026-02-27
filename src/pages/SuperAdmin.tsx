@@ -590,7 +590,7 @@ export function SuperAdmin() {
 
                       <div className="flex items-center gap-2 shrink-0">
                         <a
-                          href={`/?club=${club.id}`}
+                          href={`./?club=${club.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
