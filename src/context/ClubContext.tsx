@@ -70,6 +70,21 @@ export function ClubProvider({ children }: { children: ReactNode }) {
       if (fetchError) throw fetchError;
       if (!data) throw new Error('Club not found');
 
+      // Auto-expire if subscription has passed its expiry date
+      if (
+        (data.subscription_status === 'active' || data.subscription_status === 'trial') &&
+        data.subscription_expires_at
+      ) {
+        const expiresAt = new Date(data.subscription_expires_at);
+        if (expiresAt < new Date()) {
+          await supabase
+            .from('clubs')
+            .update({ subscription_status: 'expired' })
+            .eq('id', clubId);
+          data.subscription_status = 'expired';
+        }
+      }
+
       setClub(data);
 
       // Apply color variables to document root

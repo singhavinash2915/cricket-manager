@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, SUPER_ADMIN_PASSWORD } from '../lib/supabase';
-import type { Club } from '../types';
+import type { Club, SubscriptionOrder } from '../types';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input, TextArea, Select } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
 import {
-  Shield, Plus, Building2, Users, MapPin, Edit, Trash2, Lock, LogOut,
-  CheckCircle, XCircle, Clock, Eye
+  Shield, Plus, Users, MapPin, Edit, Trash2, Lock, LogOut,
+  CheckCircle, XCircle, Clock, Eye, DollarSign, CalendarPlus,
+  Receipt, AlertCircle
 } from 'lucide-react';
 
 interface ClubWithStats extends Club {
@@ -25,6 +26,15 @@ export function SuperAdmin() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingClub, setEditingClub] = useState<Club | null>(null);
+  const [activeTab, setActiveTab] = useState<'clubs' | 'payments'>('clubs');
+  const [subscriptionOrders, setSubscriptionOrders] = useState<(SubscriptionOrder & { club?: { name: string; short_name: string } })[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+
+  // Payment modal state
+  const [paymentClub, setPaymentClub] = useState<Club | null>(null);
+  const [paymentType, setPaymentType] = useState<'setup' | 'monthly'>('setup');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   // Form state
   const [form, setForm] = useState({
@@ -67,7 +77,6 @@ export function SuperAdmin() {
 
       if (error) throw error;
 
-      // Get member counts for each club
       const clubsWithStats: ClubWithStats[] = [];
       for (const club of clubsData || []) {
         const { count } = await supabase
@@ -86,9 +95,29 @@ export function SuperAdmin() {
     }
   }, []);
 
+  const fetchSubscriptionOrders = useCallback(async () => {
+    try {
+      setLoadingOrders(true);
+      const { data, error } = await supabase
+        .from('subscription_orders')
+        .select('*, club:clubs(name, short_name)')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSubscriptionOrders(data || []);
+    } catch (err) {
+      console.error('Failed to fetch subscription orders:', err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  }, []);
+
   useEffect(() => {
-    if (isAuthenticated) fetchClubs();
-  }, [isAuthenticated, fetchClubs]);
+    if (isAuthenticated) {
+      fetchClubs();
+      fetchSubscriptionOrders();
+    }
+  }, [isAuthenticated, fetchClubs, fetchSubscriptionOrders]);
 
   const handleLogin = () => {
     if (password === SUPER_ADMIN_PASSWORD) {
@@ -126,7 +155,7 @@ export function SuperAdmin() {
         subscription_expires_at: form.subscription_status === 'trial'
           ? new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString()
           : form.subscription_status === 'active'
-          ? new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString()
+          ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           : null,
         about_story: form.about_story || null,
         about_mission: form.about_mission || null,
@@ -166,7 +195,6 @@ export function SuperAdmin() {
         about_mission: form.about_mission || null,
       };
 
-      // Only update password if a new one is provided
       if (form.admin_password_hash) {
         updates.admin_password_hash = form.admin_password_hash;
       }
@@ -200,23 +228,92 @@ export function SuperAdmin() {
     }
   };
 
-  const toggleSubscription = async (clubId: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'active' ? 'expired' : 'active';
-    const expiresAt = newStatus === 'active'
-      ? new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString()
-      : null;
-
+  const handleExtendSubscription = async (clubId: string) => {
     try {
+      const club = clubs.find(c => c.id === clubId);
+      if (!club) return;
+
+      const currentExpiry = club.subscription_expires_at
+        ? new Date(club.subscription_expires_at)
+        : new Date();
+      const baseDate = currentExpiry > new Date() ? currentExpiry : new Date();
+      const newExpiry = new Date(baseDate);
+      newExpiry.setDate(newExpiry.getDate() + 30);
+
       const { error } = await supabase
         .from('clubs')
-        .update({ subscription_status: newStatus, subscription_expires_at: expiresAt })
+        .update({
+          subscription_status: 'active',
+          subscription_expires_at: newExpiry.toISOString(),
+        })
         .eq('id', clubId);
 
       if (error) throw error;
       await fetchClubs();
     } catch (err) {
-      console.error('Failed to toggle subscription:', err);
+      console.error('Failed to extend subscription:', err);
     }
+  };
+
+  const handleRecordPayment = async () => {
+    if (!paymentClub) return;
+
+    setPaymentLoading(true);
+    try {
+      const amount = paymentType === 'setup' ? 999 : 499;
+      const now = new Date();
+      const periodEnd = new Date(now);
+      periodEnd.setDate(periodEnd.getDate() + 30);
+
+      // Insert subscription order
+      const { error: insertError } = await supabase
+        .from('subscription_orders')
+        .insert({
+          club_id: paymentClub.id,
+          type: paymentType,
+          amount,
+          payment_method: 'manual',
+          status: 'paid',
+          period_start: now.toISOString().split('T')[0],
+          period_end: periodEnd.toISOString().split('T')[0],
+          notes: paymentNotes || null,
+          paid_at: now.toISOString(),
+        });
+
+      if (insertError) throw insertError;
+
+      // Update club
+      const updateData: Record<string, unknown> = {
+        subscription_status: 'active',
+        subscription_expires_at: periodEnd.toISOString(),
+      };
+      if (paymentType === 'setup') {
+        updateData.setup_fee_paid = true;
+      }
+
+      const { error: updateError } = await supabase
+        .from('clubs')
+        .update(updateData)
+        .eq('id', paymentClub.id);
+
+      if (updateError) throw updateError;
+
+      setPaymentClub(null);
+      setPaymentNotes('');
+      await fetchClubs();
+      await fetchSubscriptionOrders();
+    } catch (err) {
+      console.error('Failed to record payment:', err);
+      alert(`Failed to record payment: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  const openPaymentModal = (club: Club) => {
+    setPaymentClub(club);
+    setPaymentType(club.setup_fee_paid ? 'monthly' : 'setup');
+    setPaymentNotes('');
   };
 
   const openEditModal = (club: Club) => {
@@ -240,6 +337,12 @@ export function SuperAdmin() {
       about_story: club.about_story || '',
       about_mission: club.about_mission || '',
     });
+  };
+
+  const getDaysRemaining = (expiresAt: string | null) => {
+    if (!expiresAt) return null;
+    const days = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return days;
   };
 
   // Login Screen
@@ -285,6 +388,16 @@ export function SuperAdmin() {
     }
   };
 
+  const expiringSoonClubs = clubs.filter(c => {
+    if (c.subscription_status !== 'active' && c.subscription_status !== 'trial') return false;
+    const days = getDaysRemaining(c.subscription_expires_at);
+    return days !== null && days <= 7 && days >= 0;
+  });
+
+  const totalRevenue = subscriptionOrders
+    .filter(o => o.status === 'paid')
+    .reduce((sum, o) => sum + o.amount, 0);
+
   const clubForm = (
     <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
       <div className="grid grid-cols-2 gap-4">
@@ -320,7 +433,7 @@ export function SuperAdmin() {
         onChange={e => setForm({ ...form, subscription_status: e.target.value as 'active' | 'trial' | 'expired' })}
         options={[
           { value: 'trial', label: 'Trial (15 days)' },
-          { value: 'active', label: 'Active (6 months)' },
+          { value: 'active', label: 'Active (30 days)' },
           { value: 'expired', label: 'Expired' },
         ]}
       />
@@ -357,7 +470,7 @@ export function SuperAdmin() {
 
       {/* Stats */}
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <Card className="p-4 text-center">
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{clubs.length}</p>
             <p className="text-sm text-gray-500">Total Clubs</p>
@@ -371,84 +484,215 @@ export function SuperAdmin() {
             <p className="text-sm text-gray-500">Trial</p>
           </Card>
           <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{clubs.reduce((sum, c) => sum + (c.member_count || 0), 0)}</p>
-            <p className="text-sm text-gray-500">Total Members</p>
+            <p className="text-2xl font-bold text-red-600">{clubs.filter(c => c.subscription_status === 'expired').length}</p>
+            <p className="text-sm text-gray-500">Expired</p>
+          </Card>
+          <Card className="p-4 text-center">
+            <p className="text-2xl font-bold text-emerald-600">₹{totalRevenue.toLocaleString()}</p>
+            <p className="text-sm text-gray-500">Total Revenue</p>
           </Card>
         </div>
 
-        {/* Club List */}
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent mx-auto"></div>
+        {/* Expiring Soon Alert */}
+        {expiringSoonClubs.length > 0 && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+              <h3 className="font-semibold text-amber-800 dark:text-amber-300">Expiring Soon ({expiringSoonClubs.length})</h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {expiringSoonClubs.map(club => (
+                <span key={club.id} className="text-sm bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-3 py-1 rounded-full">
+                  {club.name} — {getDaysRemaining(club.subscription_expires_at)} days left
+                </span>
+              ))}
+            </div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {clubs.map(club => (
-              <Card key={club.id} className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0"
-                      style={{ backgroundColor: club.primary_color || '#10b981' }}
-                    >
-                      {club.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-gray-900 dark:text-gray-100">{club.name}</h3>
-                        {getStatusBadge(club.subscription_status)}
-                      </div>
-                      <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                        {club.location && (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5" />{club.location}
-                          </span>
-                        )}
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3.5 h-3.5" />{club.member_count} members
-                        </span>
-                        <span className="text-gray-400">{club.short_name}</span>
-                      </div>
-                    </div>
-                  </div>
+        )}
 
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={`/?club=${club.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      title="View club"
-                    >
-                      <Eye className="w-4 h-4 text-gray-400" />
-                    </a>
-                    <button
-                      onClick={() => toggleSubscription(club.id, club.subscription_status)}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                        club.subscription_status === 'active'
-                          ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400'
-                          : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400'
-                      }`}
-                    >
-                      {club.subscription_status === 'active' ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button
-                      onClick={() => openEditModal(club)}
-                      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <Edit className="w-4 h-4 text-gray-400" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClub(club.id, club.name)}
-                      className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </button>
+        {/* Tabs */}
+        <div className="flex gap-1 mb-6 bg-gray-200 dark:bg-gray-700 rounded-xl p-1">
+          <button
+            onClick={() => setActiveTab('clubs')}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-colors ${
+              activeTab === 'clubs'
+                ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            Clubs ({clubs.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('payments')}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-colors ${
+              activeTab === 'payments'
+                ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            Payment History ({subscriptionOrders.length})
+          </button>
+        </div>
+
+        {/* Club List Tab */}
+        {activeTab === 'clubs' && (
+          loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent mx-auto"></div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {clubs.map(club => {
+                const daysLeft = getDaysRemaining(club.subscription_expires_at);
+                return (
+                  <Card key={club.id} className="p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-4 min-w-0">
+                        <div
+                          className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0"
+                          style={{ backgroundColor: club.primary_color || '#10b981' }}
+                        >
+                          {club.name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-bold text-gray-900 dark:text-gray-100">{club.name}</h3>
+                            {getStatusBadge(club.subscription_status)}
+                            {club.setup_fee_paid && (
+                              <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full">Setup Paid</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 flex-wrap">
+                            {club.location && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3.5 h-3.5" />{club.location}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1">
+                              <Users className="w-3.5 h-3.5" />{club.member_count} members
+                            </span>
+                            <span className="text-gray-400">{club.short_name}</span>
+                          </div>
+                          {/* Subscription info */}
+                          {club.subscription_expires_at && (
+                            <div className="mt-1 text-xs text-gray-400">
+                              {daysLeft !== null && daysLeft > 0 ? (
+                                <span className={daysLeft <= 7 ? 'text-amber-500 font-semibold' : ''}>
+                                  Expires: {new Date(club.subscription_expires_at).toLocaleDateString()} ({daysLeft} days)
+                                </span>
+                              ) : daysLeft !== null && daysLeft <= 0 ? (
+                                <span className="text-red-500 font-semibold">Expired on {new Date(club.subscription_expires_at).toLocaleDateString()}</span>
+                              ) : null}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <a
+                          href={`/?club=${club.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          title="View club"
+                        >
+                          <Eye className="w-4 h-4 text-gray-400" />
+                        </a>
+                        {club.subscription_status === 'active' ? (
+                          <button
+                            onClick={() => handleExtendSubscription(club.id)}
+                            className="p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                            title="Extend 30 days"
+                          >
+                            <CalendarPlus className="w-4 h-4 text-emerald-500" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => openPaymentModal(club)}
+                            className="px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 transition-colors"
+                          >
+                            <DollarSign className="w-3.5 h-3.5 inline mr-0.5" />Record Payment
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openEditModal(club)}
+                          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <Edit className="w-4 h-4 text-gray-400" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClub(club.id, club.name)}
+                          className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-400" />
+                        </button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )
+        )}
+
+        {/* Payment History Tab */}
+        {activeTab === 'payments' && (
+          loadingOrders ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent mx-auto"></div>
+            </div>
+          ) : subscriptionOrders.length === 0 ? (
+            <Card className="p-12 text-center">
+              <Receipt className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">No payments yet</h3>
+              <p className="text-sm text-gray-500">Subscription payments will appear here once recorded.</p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {subscriptionOrders.map(order => (
+                <Card key={order.id} className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        order.status === 'paid' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-700'
+                      }`}>
+                        {order.status === 'paid' ? (
+                          <CheckCircle className="w-5 h-5 text-green-500" />
+                        ) : (
+                          <Clock className="w-5 h-5 text-gray-400" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900 dark:text-gray-100">
+                            {order.club?.name || 'Unknown Club'}
+                          </span>
+                          <Badge variant={order.type === 'setup' ? 'info' : 'default'}>
+                            {order.type === 'setup' ? 'Setup' : 'Monthly'}
+                          </Badge>
+                          <Badge variant={order.payment_method === 'manual' ? 'warning' : 'success'}>
+                            {order.payment_method === 'manual' ? 'Manual' : 'Razorpay'}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {order.notes && ` — ${order.notes}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-gray-900 dark:text-gray-100">₹{order.amount}</p>
+                      <p className={`text-xs font-semibold ${
+                        order.status === 'paid' ? 'text-green-500' : order.status === 'failed' ? 'text-red-500' : 'text-gray-400'
+                      }`}>
+                        {order.status.toUpperCase()}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )
         )}
       </div>
 
@@ -470,6 +714,43 @@ export function SuperAdmin() {
           <Button variant="secondary" onClick={() => { setEditingClub(null); resetForm(); }}>Cancel</Button>
           <Button onClick={handleUpdateClub} disabled={!form.name || !form.short_name}>
             Save Changes
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Record Payment Modal */}
+      <Modal isOpen={!!paymentClub} onClose={() => setPaymentClub(null)} title={`Record Payment: ${paymentClub?.name || ''}`}>
+        <div className="space-y-4">
+          <Select
+            label="Payment Type"
+            value={paymentType}
+            onChange={e => setPaymentType(e.target.value as 'setup' | 'monthly')}
+            options={[
+              { value: 'setup', label: `Setup Fee — ₹999` },
+              { value: 'monthly', label: `Monthly — ₹499` },
+            ]}
+          />
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Amount</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              ₹{paymentType === 'setup' ? '999' : '499'}
+            </p>
+          </div>
+          <TextArea
+            label="Payment Notes"
+            value={paymentNotes}
+            onChange={e => setPaymentNotes(e.target.value)}
+            placeholder="e.g., UPI transaction ID, bank transfer ref..."
+            rows={2}
+          />
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            This will activate the subscription for 30 days from today.
+          </p>
+        </div>
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <Button variant="secondary" onClick={() => setPaymentClub(null)}>Cancel</Button>
+          <Button onClick={handleRecordPayment} disabled={paymentLoading}>
+            {paymentLoading ? 'Processing...' : 'Record & Activate'}
           </Button>
         </div>
       </Modal>

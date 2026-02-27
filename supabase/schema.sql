@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS clubs (
   payment_link TEXT,
   subscription_status TEXT DEFAULT 'trial' CHECK (subscription_status IN ('active', 'trial', 'expired')),
   subscription_expires_at TIMESTAMPTZ,
+  setup_fee_paid BOOLEAN DEFAULT FALSE,
   about_story TEXT,
   about_mission TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -214,6 +215,38 @@ CREATE TABLE IF NOT EXISTS payment_orders (
 CREATE INDEX IF NOT EXISTS idx_payment_orders_club_id ON payment_orders(club_id);
 
 -- ============================================================================
+-- 12. SUBSCRIPTION ORDERS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS subscription_orders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  club_id UUID NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('setup', 'monthly')),
+  amount DECIMAL(10,2) NOT NULL CHECK (amount > 0),
+  payment_method TEXT NOT NULL CHECK (payment_method IN ('razorpay', 'manual')),
+  razorpay_order_id TEXT UNIQUE,
+  razorpay_payment_id TEXT,
+  razorpay_signature TEXT,
+  status TEXT DEFAULT 'created' CHECK (status IN ('created', 'paid', 'failed')),
+  period_start DATE,
+  period_end DATE,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  paid_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscription_orders_club_id ON subscription_orders(club_id);
+CREATE INDEX IF NOT EXISTS idx_subscription_orders_status ON subscription_orders(status);
+
+-- ============================================================================
+-- 13. PLATFORM SETTINGS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS platform_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================================================
 -- ROW LEVEL SECURITY
 -- ============================================================================
 -- RLS is enabled on all tables with public access policies.
@@ -251,6 +284,12 @@ CREATE POLICY "public_access" ON feedback FOR ALL USING (true);
 
 ALTER TABLE payment_orders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "public_access" ON payment_orders FOR ALL USING (true);
+
+ALTER TABLE subscription_orders ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_access" ON subscription_orders FOR ALL USING (true);
+
+ALTER TABLE platform_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_access" ON platform_settings FOR ALL USING (true);
 
 -- ============================================================================
 -- STORAGE BUCKETS

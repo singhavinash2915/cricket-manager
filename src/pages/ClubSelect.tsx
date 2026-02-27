@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useClub } from '../context/ClubContext';
 import type { Club } from '../types';
-import { Building2, MapPin, Users, ChevronRight, Search, Shield } from 'lucide-react';
+import { Building2, MapPin, ChevronRight, Search, Shield } from 'lucide-react';
+import { usePlatformSettings } from '../hooks/usePlatformSettings';
 
 export function ClubSelect() {
   const { selectClub } = useClub();
+  const { settings } = usePlatformSettings();
   const [clubs, setClubs] = useState<Club[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -144,16 +146,25 @@ export function ClubSelect() {
         )}
 
         {/* Footer */}
-        <div className="mt-12 text-center text-sm text-gray-400 dark:text-gray-500">
+        <div className="mt-12 text-center text-sm text-gray-400 dark:text-gray-500 space-y-2">
           <p>Want to register your cricket club?</p>
-          <a
-            href="https://wa.me/919876543210"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary-500 hover:text-primary-600 font-medium"
-          >
-            Contact us on WhatsApp
-          </a>
+          <div className="flex items-center justify-center gap-4">
+            <a
+              href="pricing"
+              className="text-primary-500 hover:text-primary-600 font-medium"
+            >
+              View Pricing
+            </a>
+            <span className="text-gray-300 dark:text-gray-600">|</span>
+            <a
+              href={`https://wa.me/${settings.contact.whatsapp}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-500 hover:text-primary-600 font-medium"
+            >
+              Contact us on WhatsApp
+            </a>
+          </div>
         </div>
       </div>
     </div>

@@ -18,6 +18,7 @@ export interface Club {
   payment_link: string | null;
   subscription_status: 'active' | 'trial' | 'expired';
   subscription_expires_at: string | null;
+  setup_fee_paid: boolean;
   about_story: string | null;
   about_mission: string | null;
   created_at: string;
@@ -173,4 +174,38 @@ export interface PaymentOrder {
   created_at: string;
   paid_at: string | null;
   member?: Member;
+}
+
+export interface SubscriptionOrder {
+  id: string;
+  club_id: string;
+  type: 'setup' | 'monthly';
+  amount: number;
+  payment_method: 'razorpay' | 'manual';
+  razorpay_order_id: string | null;
+  razorpay_payment_id: string | null;
+  razorpay_signature: string | null;
+  status: 'created' | 'paid' | 'failed';
+  period_start: string | null;
+  period_end: string | null;
+  notes: string | null;
+  created_at: string;
+  paid_at: string | null;
+  club?: Club;
+}
+
+export interface PlatformPricing {
+  setup_fee: number;
+  monthly_fee: number;
+  trial_days: number;
+}
+
+export interface PlatformContact {
+  whatsapp: string;
+  email: string;
+}
+
+export interface PlatformSettings {
+  pricing: PlatformPricing;
+  contact: PlatformContact;
 }

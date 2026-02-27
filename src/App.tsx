@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { SubscriptionBanner } from './components/SubscriptionBanner';
 import { ClubSelect } from './pages/ClubSelect';
 import { SuperAdmin } from './pages/SuperAdmin';
+import { Pricing } from './pages/Pricing';
 import { Layout } from './components/layout/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Members } from './pages/Members';
@@ -73,8 +74,9 @@ function App() {
     <ThemeProvider>
       <BrowserRouter basename="/cricket-manager">
         <Routes>
-          {/* Super Admin route - outside club context */}
+          {/* Public routes - outside club context */}
           <Route path="/super-admin" element={<SuperAdmin />} />
+          <Route path="/pricing" element={<Pricing />} />
 
           {/* All other routes - inside club context */}
           <Route path="/*" element={
