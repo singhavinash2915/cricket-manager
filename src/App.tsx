@@ -4,6 +4,7 @@ import { ClubProvider, useClub } from './context/ClubContext';
 import { AuthProvider } from './context/AuthContext';
 import { SubscriptionBanner } from './components/SubscriptionBanner';
 import { Pricing } from './pages/Pricing';
+import { HowItWorks } from './pages/HowItWorks';
 import { SuperAdmin } from './pages/SuperAdmin';
 import { Layout } from './components/layout/Layout';
 import { Dashboard } from './pages/Dashboard';
@@ -78,6 +79,7 @@ function App() {
           {/* Public routes - outside club context */}
           <Route path="/super-admin" element={<SuperAdmin />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
 
           {/* All other routes - inside club context */}
           <Route path="/*" element={

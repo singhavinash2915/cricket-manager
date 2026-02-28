@@ -85,12 +85,20 @@ export function Pricing() {
       <nav className="bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <CricMatesLogo size={36} showText textClassName="text-lg text-gray-900 dark:text-gray-100" />
-          <a
-            href="./"
-            className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all"
-          >
-            Enter App <ArrowRight className="w-4 h-4" />
-          </a>
+          <div className="flex items-center gap-3">
+            <a
+              href="./how-it-works"
+              className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            >
+              How It Works
+            </a>
+            <a
+              href="./"
+              className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all"
+            >
+              Enter App <ArrowRight className="w-4 h-4" />
+            </a>
+          </div>
         </div>
       </nav>
 
@@ -461,6 +469,12 @@ export function Pricing() {
               className="hover:text-emerald-400 transition-colors"
             >
               {settings.contact.email}
+            </a>
+            <a
+              href="./how-it-works"
+              className="hover:text-emerald-400 transition-colors"
+            >
+              How It Works
             </a>
             <a
               href="./"
