@@ -43,6 +43,10 @@ const FAQS = [
     answer: 'Your data is safely stored. You just lose access to the dashboard until you renew. No data is ever deleted — renew anytime to pick up where you left off.',
   },
   {
+    question: 'What\'s the difference between monthly and yearly plans?',
+    answer: 'Both plans include all features. The yearly plan gives you a 20% discount — you pay for 10 months and get 12 months of access. Great for clubs committed for the full season!',
+  },
+  {
     question: 'Can I set up my own Razorpay for member payments?',
     answer: 'Yes! Each club can configure their own Razorpay account. Member deposits go directly to your club\'s account. The platform subscription payment is separate.',
   },
@@ -63,6 +67,7 @@ const FAQS = [
 export function Pricing() {
   const { settings } = usePlatformSettings();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -148,6 +153,33 @@ export function Pricing() {
             <p className="text-gray-500 dark:text-gray-400">
               One plan. All features. No hidden charges.
             </p>
+
+            {/* Billing Cycle Toggle */}
+            <div className="flex items-center justify-center gap-3 mt-6">
+              <button
+                onClick={() => setBillingCycle('monthly')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  billingCycle === 'monthly'
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingCycle('yearly')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors relative ${
+                  billingCycle === 'yearly'
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                Yearly
+                <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  -20%
+                </span>
+              </button>
+            </div>
           </div>
 
           <div className="max-w-md mx-auto">
@@ -167,10 +199,28 @@ export function Pricing() {
                 <div className="flex items-baseline justify-center gap-1">
                   <span className="text-lg text-gray-500 dark:text-gray-400">+</span>
                 </div>
-                <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-4xl font-extrabold text-gray-900 dark:text-gray-100">₹{settings.pricing.monthly_fee}</span>
-                  <span className="text-gray-500 dark:text-gray-400 text-sm">/month</span>
-                </div>
+                {billingCycle === 'monthly' ? (
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-4xl font-extrabold text-gray-900 dark:text-gray-100">₹{settings.pricing.monthly_fee}</span>
+                    <span className="text-gray-500 dark:text-gray-400 text-sm">/month</span>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-4xl font-extrabold text-gray-900 dark:text-gray-100">₹{settings.pricing.yearly_fee}</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-sm">/year</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 mt-2">
+                      <span className="text-sm text-gray-400 line-through">₹{settings.pricing.monthly_fee * 12}</span>
+                      <span className="text-sm font-semibold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">
+                        Save ₹{settings.pricing.monthly_fee * 12 - settings.pricing.yearly_fee}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      That's ₹{Math.round(settings.pricing.yearly_fee / 12)}/month
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3 mb-8">
@@ -193,7 +243,11 @@ export function Pricing() {
                   Start Free Trial
                 </a>
                 <a
-                  href={`https://wa.me/${settings.contact.whatsapp}?text=${encodeURIComponent(`Hi, I want to pay the setup fee (₹${settings.pricing.setup_fee}) and subscribe to CricMates for my cricket club.`)}`}
+                  href={`https://wa.me/${settings.contact.whatsapp}?text=${encodeURIComponent(
+                    billingCycle === 'yearly'
+                      ? `Hi, I want to pay the setup fee (₹${settings.pricing.setup_fee}) and subscribe yearly (₹${settings.pricing.yearly_fee}/year) to CricMates for my cricket club.`
+                      : `Hi, I want to pay the setup fee (₹${settings.pricing.setup_fee}) and subscribe monthly (₹${settings.pricing.monthly_fee}/month) to CricMates for my cricket club.`
+                  )}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold py-3 px-6 rounded-xl transition-colors border border-gray-200 dark:border-gray-600"

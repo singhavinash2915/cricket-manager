@@ -32,7 +32,7 @@ export function SuperAdmin() {
 
   // Payment modal state
   const [paymentClub, setPaymentClub] = useState<Club | null>(null);
-  const [paymentType, setPaymentType] = useState<'setup' | 'monthly'>('setup');
+  const [paymentType, setPaymentType] = useState<'setup' | 'monthly' | 'yearly'>('setup');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
 
@@ -260,10 +260,10 @@ export function SuperAdmin() {
 
     setPaymentLoading(true);
     try {
-      const amount = paymentType === 'setup' ? 999 : 499;
+      const amount = paymentType === 'setup' ? 999 : paymentType === 'yearly' ? 4790 : 499;
       const now = new Date();
       const periodEnd = new Date(now);
-      periodEnd.setDate(periodEnd.getDate() + 30);
+      periodEnd.setDate(periodEnd.getDate() + (paymentType === 'yearly' ? 365 : 30));
 
       // Insert subscription order
       const { error: insertError } = await supabase
@@ -315,6 +315,7 @@ export function SuperAdmin() {
     setPaymentType(club.setup_fee_paid ? 'monthly' : 'setup');
     setPaymentNotes('');
   };
+
 
   const openEditModal = (club: Club) => {
     setEditingClub(club);
@@ -667,8 +668,8 @@ export function SuperAdmin() {
                           <span className="font-semibold text-gray-900 dark:text-gray-100">
                             {order.club?.name || 'Unknown Club'}
                           </span>
-                          <Badge variant={order.type === 'setup' ? 'info' : 'default'}>
-                            {order.type === 'setup' ? 'Setup' : 'Monthly'}
+                          <Badge variant={order.type === 'setup' ? 'info' : order.type === 'yearly' ? 'success' : 'default'}>
+                            {order.type === 'setup' ? 'Setup' : order.type === 'yearly' ? 'Yearly' : 'Monthly'}
                           </Badge>
                           <Badge variant={order.payment_method === 'manual' ? 'warning' : 'success'}>
                             {order.payment_method === 'manual' ? 'Manual' : 'Razorpay'}
@@ -724,16 +725,17 @@ export function SuperAdmin() {
           <Select
             label="Payment Type"
             value={paymentType}
-            onChange={e => setPaymentType(e.target.value as 'setup' | 'monthly')}
+            onChange={e => setPaymentType(e.target.value as 'setup' | 'monthly' | 'yearly')}
             options={[
               { value: 'setup', label: `Setup Fee — ₹999` },
               { value: 'monthly', label: `Monthly — ₹499` },
+              { value: 'yearly', label: `Yearly — ₹4,790 (Save 20%)` },
             ]}
           />
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-center">
             <p className="text-sm text-gray-500 dark:text-gray-400">Amount</p>
             <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              ₹{paymentType === 'setup' ? '999' : '499'}
+              ₹{paymentType === 'setup' ? '999' : paymentType === 'yearly' ? '4,790' : '499'}
             </p>
           </div>
           <TextArea
@@ -744,7 +746,7 @@ export function SuperAdmin() {
             rows={2}
           />
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            This will activate the subscription for 30 days from today.
+            This will activate the subscription for {paymentType === 'yearly' ? '365' : '30'} days from today.
           </p>
         </div>
         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">

@@ -5,6 +5,7 @@ import type { PlatformSettings, PlatformPricing, PlatformContact } from '../type
 const DEFAULT_PRICING: PlatformPricing = {
   setup_fee: 999,
   monthly_fee: 499,
+  yearly_fee: 4790,
   trial_days: 15,
 };
 

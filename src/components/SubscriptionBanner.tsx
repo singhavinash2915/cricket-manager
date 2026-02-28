@@ -10,6 +10,7 @@ export function SubscriptionBanner() {
   const { recordManualPayment, loading: paymentLoading } = useSubscriptionPayment();
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
+  const [renewPlan, setRenewPlan] = useState<'monthly' | 'yearly'>('monthly');
 
   if (!club) return null;
 
@@ -41,11 +42,17 @@ export function SubscriptionBanner() {
 
   if (subscription_status === 'expired') {
     const needsSetup = !setup_fee_paid;
-    const amount = needsSetup ? settings.pricing.setup_fee : settings.pricing.monthly_fee;
-    const paymentType = needsSetup ? 'setup' : 'monthly';
+    const paymentType = needsSetup ? 'setup' : renewPlan;
+    const amount = needsSetup
+      ? settings.pricing.setup_fee
+      : renewPlan === 'yearly'
+      ? settings.pricing.yearly_fee
+      : settings.pricing.monthly_fee;
     const whatsappMessage = needsSetup
       ? `Hi, I want to pay the setup fee (₹${settings.pricing.setup_fee}) for ${club.name}. Club ID: ${club.short_name}`
-      : `Hi, I want to renew my monthly subscription (₹${settings.pricing.monthly_fee}) for ${club.name}. Club ID: ${club.short_name}`;
+      : renewPlan === 'yearly'
+      ? `Hi, I want to renew my yearly subscription (₹${settings.pricing.yearly_fee}/year) for ${club.name}. Club ID: ${club.short_name}`
+      : `Hi, I want to renew my monthly subscription (₹${settings.pricing.monthly_fee}/month) for ${club.name}. Club ID: ${club.short_name}`;
 
     if (paymentStatus === 'success') {
       return (
@@ -82,18 +89,52 @@ export function SubscriptionBanner() {
             Subscription Expired
           </h2>
           <p className="text-gray-500 dark:text-gray-400 mb-2">
-            Your club's subscription has expired. {needsSetup ? 'Pay the one-time setup fee to activate your account.' : 'Renew your monthly subscription to continue.'}
+            Your club's subscription has expired. {needsSetup ? 'Pay the one-time setup fee to activate your account.' : 'Renew your subscription to continue.'}
           </p>
+
+          {/* Renewal Plan Toggle (only when not needing setup) */}
+          {!needsSetup && (
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <button
+                onClick={() => setRenewPlan('monthly')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  renewPlan === 'monthly'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setRenewPlan('yearly')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors relative ${
+                  renewPlan === 'yearly'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                Yearly
+                <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  -20%
+                </span>
+              </button>
+            </div>
+          )}
 
           {/* Amount Due */}
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 mb-6">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Amount Due</p>
             <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              ₹{amount}
+              ₹{amount.toLocaleString()}
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {needsSetup ? 'One-time setup fee' : 'Monthly subscription'}
+              {needsSetup ? 'One-time setup fee' : renewPlan === 'yearly' ? 'Yearly subscription (save 20%)' : 'Monthly subscription'}
             </p>
+            {!needsSetup && renewPlan === 'yearly' && (
+              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                Save ₹{settings.pricing.monthly_fee * 12 - settings.pricing.yearly_fee} compared to monthly
+              </p>
+            )}
           </div>
 
           {paymentStatus === 'error' && (
@@ -116,10 +157,10 @@ export function SubscriptionBanner() {
 
             <button
               onClick={async () => {
-                const result = await recordManualPayment(paymentType, 'Self-service payment request');
+                const result = await recordManualPayment(paymentType, `Self-service ${renewPlan} payment request`);
                 if (result.success) {
                   setPaymentStatus('success');
-                  setStatusMessage('Your subscription has been activated. Welcome back!');
+                  setStatusMessage(`Your ${renewPlan} subscription has been activated. Welcome back!`);
                 } else {
                   setPaymentStatus('error');
                   setStatusMessage(result.message);
@@ -129,7 +170,7 @@ export function SubscriptionBanner() {
               className="w-full inline-flex items-center justify-center gap-2 bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
             >
               <CreditCard className="w-5 h-5" />
-              {paymentLoading ? 'Processing...' : `Pay ₹${amount} Online`}
+              {paymentLoading ? 'Processing...' : `Pay ₹${amount.toLocaleString()} Online`}
             </button>
           </div>
 

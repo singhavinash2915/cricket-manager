@@ -15,7 +15,7 @@ export function useSubscriptionPayment() {
   const [error, setError] = useState<string | null>(null);
 
   const recordManualPayment = async (
-    type: 'setup' | 'monthly',
+    type: 'setup' | 'monthly' | 'yearly',
     notes: string
   ): Promise<PaymentResult> => {
     if (!club) return { success: false, message: 'No club selected' };
@@ -24,10 +24,14 @@ export function useSubscriptionPayment() {
     setError(null);
 
     try {
-      const amount = type === 'setup' ? settings.pricing.setup_fee : settings.pricing.monthly_fee;
+      const amount = type === 'setup'
+        ? settings.pricing.setup_fee
+        : type === 'yearly'
+        ? settings.pricing.yearly_fee
+        : settings.pricing.monthly_fee;
       const now = new Date();
       const periodEnd = new Date(now);
-      periodEnd.setDate(periodEnd.getDate() + 30);
+      periodEnd.setDate(periodEnd.getDate() + (type === 'yearly' ? 365 : 30));
 
       // Insert subscription order
       const { error: insertError } = await supabase

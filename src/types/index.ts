@@ -179,7 +179,7 @@ export interface PaymentOrder {
 export interface SubscriptionOrder {
   id: string;
   club_id: string;
-  type: 'setup' | 'monthly';
+  type: 'setup' | 'monthly' | 'yearly';
   amount: number;
   payment_method: 'razorpay' | 'manual';
   razorpay_order_id: string | null;
@@ -197,6 +197,7 @@ export interface SubscriptionOrder {
 export interface PlatformPricing {
   setup_fee: number;
   monthly_fee: number;
+  yearly_fee: number;
   trial_days: number;
 }
 
