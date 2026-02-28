@@ -699,9 +699,11 @@ export function HowItWorks() {
       {/* Footer */}
       <footer className="bg-gray-950 text-gray-400 py-16">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <CricMatesLogo size={40} className="justify-center mb-4" showText textClassName="text-xl text-white" />
+          <a href="./pricing" className="inline-block hover:opacity-80 transition-opacity">
+            <CricMatesLogo size={40} className="justify-center mb-4" showText textClassName="text-xl text-white" />
+          </a>
           <p className="text-sm mb-8 text-gray-500">The complete cricket club management platform</p>
-          <div className="flex items-center justify-center gap-6 text-sm">
+          <div className="flex items-center justify-center gap-6 text-sm flex-wrap">
             <a
               href={`https://wa.me/${settings.contact.whatsapp}`}
               target="_blank"

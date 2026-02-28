@@ -9,7 +9,7 @@ import { Badge } from '../components/ui/Badge';
 import {
   Shield, Plus, Users, MapPin, Edit, Trash2, Lock, LogOut,
   CheckCircle, XCircle, Clock, Eye, DollarSign, CalendarPlus,
-  Receipt, AlertCircle
+  Receipt, AlertCircle, Upload, X
 } from 'lucide-react';
 
 interface ClubWithStats extends Club {
@@ -36,6 +36,10 @@ export function SuperAdmin() {
   const [paymentNotes, setPaymentNotes] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
 
+  // Logo upload state
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
   // Form state
   const [form, setForm] = useState({
     name: '',
@@ -55,6 +59,7 @@ export function SuperAdmin() {
     subscription_status: 'trial' as 'active' | 'trial' | 'expired',
     about_story: '',
     about_mission: '',
+    logo_url: '' as string,
   });
 
   const resetForm = () => {
@@ -64,7 +69,10 @@ export function SuperAdmin() {
       team_a_name: 'Team A', team_b_name: 'Team B', admin_password_hash: '',
       razorpay_key_id: '', payment_link: '',
       subscription_status: 'trial', about_story: '', about_mission: '',
+      logo_url: '',
     });
+    setLogoFile(null);
+    setLogoPreview(null);
   };
 
   const fetchClubs = useCallback(async () => {
@@ -134,11 +142,44 @@ export function SuperAdmin() {
     localStorage.removeItem('cm-superadmin');
   };
 
+  const uploadLogo = async (file: File, shortName: string): Promise<string> => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+    const filePath = `logos/${shortName}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('club-logos')
+      .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('club-logos')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setLogoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const handleAddClub = async () => {
     try {
+      const shortName = form.short_name.toLowerCase().replace(/\s+/g, '-');
+
+      let logoUrl: string | null = null;
+      if (logoFile) {
+        logoUrl = await uploadLogo(logoFile, shortName);
+      }
+
       const clubData = {
         name: form.name,
-        short_name: form.short_name.toLowerCase().replace(/\s+/g, '-'),
+        short_name: shortName,
         primary_color: form.primary_color,
         phone: form.phone || null,
         email: form.email || null,
@@ -159,6 +200,7 @@ export function SuperAdmin() {
           : null,
         about_story: form.about_story || null,
         about_mission: form.about_mission || null,
+        logo_url: logoUrl,
       };
 
       const { error } = await supabase.from('clubs').insert([clubData]);
@@ -176,9 +218,19 @@ export function SuperAdmin() {
   const handleUpdateClub = async () => {
     if (!editingClub) return;
     try {
+      const shortName = form.short_name.toLowerCase().replace(/\s+/g, '-');
+
+      let logoUrl: string | null | undefined = undefined;
+      if (logoFile) {
+        logoUrl = await uploadLogo(logoFile, shortName);
+      } else if (!form.logo_url && editingClub.logo_url) {
+        // Logo was removed
+        logoUrl = null;
+      }
+
       const updates: Record<string, unknown> = {
         name: form.name,
-        short_name: form.short_name.toLowerCase().replace(/\s+/g, '-'),
+        short_name: shortName,
         primary_color: form.primary_color,
         phone: form.phone || null,
         email: form.email || null,
@@ -194,6 +246,10 @@ export function SuperAdmin() {
         about_story: form.about_story || null,
         about_mission: form.about_mission || null,
       };
+
+      if (logoUrl !== undefined) {
+        updates.logo_url = logoUrl;
+      }
 
       if (form.admin_password_hash) {
         updates.admin_password_hash = form.admin_password_hash;
@@ -319,6 +375,8 @@ export function SuperAdmin() {
 
   const openEditModal = (club: Club) => {
     setEditingClub(club);
+    setLogoFile(null);
+    setLogoPreview(club.logo_url || null);
     setForm({
       name: club.name,
       short_name: club.short_name,
@@ -337,6 +395,7 @@ export function SuperAdmin() {
       subscription_status: club.subscription_status,
       about_story: club.about_story || '',
       about_mission: club.about_mission || '',
+      logo_url: club.logo_url || '',
     });
   };
 
@@ -401,6 +460,37 @@ export function SuperAdmin() {
 
   const clubForm = (
     <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+      {/* Club Logo Upload */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Club Logo</label>
+        <div className="flex items-center gap-4">
+          {logoPreview ? (
+            <div className="relative">
+              <img src={logoPreview} alt="Logo preview" className="w-16 h-16 rounded-xl object-cover border-2 border-gray-200 dark:border-gray-600" />
+              <button
+                type="button"
+                onClick={() => { setLogoFile(null); setLogoPreview(null); setForm({ ...form, logo_url: '' }); }}
+                className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <div className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400">
+              <Upload className="w-6 h-6" />
+            </div>
+          )}
+          <div>
+            <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
+              <Upload className="w-4 h-4" />
+              {logoPreview ? 'Change Logo' : 'Upload Logo'}
+              <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
+            </label>
+            <p className="text-xs text-gray-400 mt-1">PNG, JPG or SVG. Recommended: 200x200px</p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <Input label="Club Name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Pune Warriors CC" required />
         <Input label="Short Name *" value={form.short_name} onChange={e => setForm({ ...form, short_name: e.target.value })} placeholder="pune-warriors" required />
@@ -549,12 +639,20 @@ export function SuperAdmin() {
                   <Card key={club.id} className="p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-4 min-w-0">
-                        <div
-                          className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0"
-                          style={{ backgroundColor: club.primary_color || '#10b981' }}
-                        >
-                          {club.name.charAt(0)}
-                        </div>
+                        {club.logo_url ? (
+                          <img
+                            src={club.logo_url}
+                            alt={club.name}
+                            className="w-12 h-12 rounded-xl object-cover shrink-0"
+                          />
+                        ) : (
+                          <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0"
+                            style={{ backgroundColor: club.primary_color || '#10b981' }}
+                          >
+                            {club.name.charAt(0)}
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="font-bold text-gray-900 dark:text-gray-100">{club.name}</h3>

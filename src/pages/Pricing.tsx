@@ -84,7 +84,9 @@ export function Pricing() {
       {/* Nav */}
       <nav className="bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <CricMatesLogo size={36} showText textClassName="text-lg text-gray-900 dark:text-gray-100" />
+          <a href="./pricing" className="hover:opacity-80 transition-opacity">
+            <CricMatesLogo size={36} showText textClassName="text-lg text-gray-900 dark:text-gray-100" />
+          </a>
           <div className="flex items-center gap-3">
             <a
               href="./how-it-works"
@@ -453,7 +455,9 @@ export function Pricing() {
       {/* Footer */}
       <footer className="bg-gray-950 text-gray-400 py-16">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <CricMatesLogo size={40} className="justify-center mb-4" showText textClassName="text-xl text-white" />
+          <a href="./pricing" className="inline-block hover:opacity-80 transition-opacity">
+            <CricMatesLogo size={40} className="justify-center mb-4" showText textClassName="text-xl text-white" />
+          </a>
           <p className="text-sm mb-8 text-gray-500">The complete cricket club management platform</p>
           <div className="flex items-center justify-center gap-6 text-sm">
             <a
