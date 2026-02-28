@@ -3,9 +3,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import { ClubProvider, useClub } from './context/ClubContext';
 import { AuthProvider } from './context/AuthContext';
 import { SubscriptionBanner } from './components/SubscriptionBanner';
-import { ClubSelect } from './pages/ClubSelect';
-import { SuperAdmin } from './pages/SuperAdmin';
 import { Pricing } from './pages/Pricing';
+import { SuperAdmin } from './pages/SuperAdmin';
 import { Layout } from './components/layout/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Members } from './pages/Members';
@@ -40,9 +39,11 @@ function AppContent() {
     return <SubscriptionBanner />;
   }
 
-  // No club selected → show club selection page
+  // No club selected → show landing page
+  // Clubs are accessed via subdomains (punewarriors.cricmates.in)
+  // or via SuperAdmin eye button (?club=id)
   if (!club) {
-    return <ClubSelect />;
+    return <Pricing />;
   }
 
   // Club selected → show the full app

@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useClub } from '../context/ClubContext';
 import type { Club } from '../types';
-import { Building2, MapPin, ChevronRight, Search, Shield } from 'lucide-react';
+import { Building2, MapPin, ChevronRight, Search } from 'lucide-react';
 import { usePlatformSettings } from '../hooks/usePlatformSettings';
+import { CricMatesLogo } from '../components/CricMatesLogo';
 
 export function ClubSelect() {
   const { selectClub } = useClub();
@@ -52,12 +53,7 @@ export function ClubSelect() {
       {/* Header */}
       <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white">
         <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <Shield className="w-7 h-7" />
-            </div>
-            <h1 className="text-3xl font-bold">CricMates</h1>
-          </div>
+          <CricMatesLogo size={48} showText className="justify-center mb-2" textClassName="text-3xl text-white" />
           <p className="text-primary-100 text-lg">
             Select your club to get started
           </p>

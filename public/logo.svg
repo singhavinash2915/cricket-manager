@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="256" fill="#10b981"/>
+
+  <!-- Inner Circle (darker) -->
+  <circle cx="256" cy="256" r="220" fill="#059669"/>
+
+  <!-- Cricket Ball Seam - left arc -->
+  <path d="M180 140 Q140 256 180 372" stroke="#fbbf24" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <!-- Cricket Ball Seam - right arc -->
+  <path d="M332 140 Q372 256 332 372" stroke="#fbbf24" stroke-width="8" fill="none" stroke-linecap="round"/>
+
+  <!-- Seam stitches left -->
+  <path d="M176 170 L168 178" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+  <path d="M168 200 L158 206" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+  <path d="M162 232 L152 236" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+  <path d="M160 264 L150 266" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+  <path d="M162 296 L152 300" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+  <path d="M168 326 L158 332" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+  <path d="M176 354 L168 362" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Seam stitches right -->
+  <path d="M336 170 L344 178" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+  <path d="M344 200 L354 206" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+  <path d="M350 232 L360 236" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+  <path d="M352 264 L362 266" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+  <path d="M350 296 L360 300" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+  <path d="M344 326 L354 332" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+  <path d="M336 354 L344 362" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- CM Text -->
+  <text x="256" y="275" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="120" fill="white" letter-spacing="-4">CM</text>
+
+  <!-- CRICMATES Text below -->
+  <text x="256" y="340" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="36" fill="#d1fae5" letter-spacing="12">CRICMATES</text>
+</svg>

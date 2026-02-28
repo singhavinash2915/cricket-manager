@@ -41,7 +41,8 @@ export function usePlatformSettings() {
         if (data) {
           for (const row of data) {
             if (row.key === 'pricing') {
-              result.pricing = row.value as unknown as PlatformPricing;
+              const dbPricing = row.value as unknown as Partial<PlatformPricing>;
+              result.pricing = { ...DEFAULT_PRICING, ...dbPricing };
             } else if (row.key === 'contact') {
               result.contact = row.value as unknown as PlatformContact;
             }
