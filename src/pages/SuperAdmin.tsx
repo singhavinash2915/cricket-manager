@@ -5,12 +5,12 @@ import { Button } from '../components/ui/Button';
 import { Input, TextArea, Select } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import {
-  Shield, Plus, Users, MapPin, Edit, Trash2, Lock, LogOut,
+  Plus, Users, MapPin, Edit, Trash2, Lock, LogOut,
   CheckCircle, XCircle, Clock, Eye, DollarSign, CalendarPlus,
   Receipt, AlertCircle, Upload, X, TrendingUp, CreditCard,
   Globe, Search, ChevronRight, Zap, IndianRupee
 } from 'lucide-react';
-import { CricMatesLogo } from '../components/CricMatesLogo';
+
 
 interface ClubWithStats extends Club {
   member_count?: number;
@@ -467,9 +467,7 @@ export function SuperAdmin() {
 
         <div className="relative max-w-sm w-full">
           <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-8 text-center border border-white/10">
-            <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/30 rotate-3">
-              <Shield className="w-10 h-10 text-white -rotate-3" />
-            </div>
+            <img src={`${import.meta.env.BASE_URL}cricmates-logo.jpeg`} alt="CricMates" className="w-20 h-20 object-contain mx-auto mb-6" />
             <h2 className="text-2xl font-extrabold text-white mb-1">Super Admin</h2>
             <p className="text-purple-300/70 mb-8 text-sm">CricMates Platform Control</p>
 
@@ -623,9 +621,7 @@ export function SuperAdmin() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 rotate-3">
-                <Shield className="w-6 h-6 text-white -rotate-3" />
-              </div>
+              <img src={`${import.meta.env.BASE_URL}cricmates-logo.jpeg`} alt="CricMates" className="w-12 h-12 object-contain rounded-xl" />
               <div>
                 <h1 className="text-xl font-extrabold text-white">CricMates Admin</h1>
                 <p className="text-sm text-slate-400">Platform Management Console</p>
