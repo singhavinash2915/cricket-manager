@@ -10,8 +10,8 @@ const DEFAULT_PRICING: PlatformPricing = {
 };
 
 const DEFAULT_CONTACT: PlatformContact = {
-  whatsapp: '919876543210',
-  email: 'admin@cricmates.in',
+  whatsapp: '918888546860',
+  email: 'singhavinash409@gmail.com',
 };
 
 let cachedSettings: PlatformSettings | null = null;
