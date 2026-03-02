@@ -116,6 +116,42 @@ export function ClubProvider({ children }: { children: ReactNode }) {
 
       // Update page title
       document.title = data.name;
+
+      // Update PWA meta tags for per-club branding
+      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', data.primary_color || '#10b981');
+      }
+      const metaAppleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if (metaAppleTitle) {
+        metaAppleTitle.setAttribute('content', data.name);
+      }
+
+      // GitHub Pages fallback: inject dynamic manifest via blob URL
+      if (window.location.hostname.endsWith('.github.io')) {
+        const manifest = {
+          name: data.name,
+          short_name: data.short_name,
+          description: `${data.name} - Cricket Club Management`,
+          start_url: window.location.pathname,
+          display: 'standalone',
+          theme_color: data.primary_color || '#10b981',
+          background_color: '#f9fafb',
+          icons: [
+            { src: data.logo_url || `${import.meta.env.BASE_URL}icons/icon-192x192.png`, sizes: '192x192', type: 'image/png' },
+            { src: data.logo_url || `${import.meta.env.BASE_URL}icons/icon-512x512.png`, sizes: '512x512', type: 'image/png' },
+          ],
+        };
+        const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+        const manifestUrl = URL.createObjectURL(blob);
+        let link = document.querySelector('link[rel="manifest"]') as HTMLLinkElement;
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'manifest';
+          document.head.appendChild(link);
+        }
+        link.href = manifestUrl;
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load club');
       setClub(null);

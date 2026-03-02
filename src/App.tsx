@@ -19,6 +19,7 @@ import { Settings } from './pages/Settings';
 import { About } from './pages/About';
 import { Feedback } from './pages/Feedback';
 import { Payment } from './pages/Payment';
+import { InstallPrompt } from './components/InstallPrompt';
 
 function AppContent() {
   const { club, loading } = useClub();
@@ -67,6 +68,7 @@ function AppContent() {
           <Route path="/about" element={<About />} />
         </Routes>
       </Layout>
+      <InstallPrompt />
     </AuthProvider>
   );
 }
