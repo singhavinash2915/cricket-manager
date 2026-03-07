@@ -40,6 +40,22 @@ export function SuperAdmin() {
   const [fixtureForm, setFixtureForm] = useState({ team_a_score: '', team_a_runs: '', team_a_wickets: '', team_a_overs_faced: '', team_b_score: '', team_b_runs: '', team_b_wickets: '', team_b_overs_faced: '', winner_team_id: '', result_summary: '', man_of_match_name: '', status: 'upcoming' as string });
   const [savingFixture, setSavingFixture] = useState(false);
 
+  // Tournament CRUD state
+  const [showTournamentModal, setShowTournamentModal] = useState(false);
+  const [editingTournament, setEditingTournament] = useState<ShowcaseTournament | null>(null);
+  const [tournamentForm, setTournamentForm] = useState({ name: '', short_name: '', slug: '', format: 'Tennis Ball', overs: '15', venue: '', venue_address: '', start_date: '', end_date: '', status: 'upcoming', stage_type: 'round_robin', points_win: '2', points_loss: '0', points_draw: '1', points_nr: '1', organizer_name: '', rules: '', total_teams: '5' });
+  const [savingTournament, setSavingTournament] = useState(false);
+
+  // Team CRUD state
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<ShowcaseTeam | null>(null);
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string>('');
+  const [teamForm, setTeamForm] = useState({ name: '', short_name: '', primary_color: '#10b981', captain_name: '', sort_order: '0' });
+  const [savingTeam, setSavingTeam] = useState(false);
+  const [teamLogoFile, setTeamLogoFile] = useState<File | null>(null);
+  const [teamLogoPreview, setTeamLogoPreview] = useState<string | null>(null);
+  const [generatingFixtures, setGeneratingFixtures] = useState(false);
+
   // Payment modal state
   const [paymentClub, setPaymentClub] = useState<Club | null>(null);
   const [selectedPayments, setSelectedPayments] = useState<Set<'setup' | 'monthly' | 'yearly'>>(new Set());
@@ -570,6 +586,255 @@ export function SuperAdmin() {
     return matchesSearch && matchesStatus;
   });
 
+  // === Showcase CRUD Functions ===
+
+  const resetTournamentForm = () => {
+    setTournamentForm({ name: '', short_name: '', slug: '', format: 'Tennis Ball', overs: '15', venue: '', venue_address: '', start_date: '', end_date: '', status: 'upcoming', stage_type: 'round_robin', points_win: '2', points_loss: '0', points_draw: '1', points_nr: '1', organizer_name: '', rules: '', total_teams: '5' });
+  };
+
+  const resetTeamForm = () => {
+    setTeamForm({ name: '', short_name: '', primary_color: '#10b981', captain_name: '', sort_order: '0' });
+    setTeamLogoFile(null);
+    setTeamLogoPreview(null);
+  };
+
+  const uploadTeamLogo = async (file: File, shortName: string, tournamentSlug: string): Promise<string> => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+    const filePath = `showcase/${tournamentSlug}/${shortName.toLowerCase()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from('club-logos')
+      .upload(filePath, file, { cacheControl: '3600', upsert: true });
+    if (uploadError) throw uploadError;
+    const { data: { publicUrl } } = supabase.storage
+      .from('club-logos')
+      .getPublicUrl(filePath);
+    return publicUrl;
+  };
+
+  const handleTeamLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setTeamLogoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setTeamLogoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddTournament = async () => {
+    setSavingTournament(true);
+    try {
+      const slug = tournamentForm.slug || tournamentForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const { error } = await supabase.from('showcase_tournaments').insert([{
+        name: tournamentForm.name,
+        short_name: tournamentForm.short_name || null,
+        slug,
+        format: tournamentForm.format,
+        overs: parseInt(tournamentForm.overs),
+        venue: tournamentForm.venue,
+        venue_address: tournamentForm.venue_address || null,
+        start_date: tournamentForm.start_date,
+        end_date: tournamentForm.end_date || null,
+        status: tournamentForm.status,
+        total_teams: parseInt(tournamentForm.total_teams),
+        stage_type: tournamentForm.stage_type,
+        points_win: parseInt(tournamentForm.points_win),
+        points_loss: parseInt(tournamentForm.points_loss),
+        points_draw: parseInt(tournamentForm.points_draw),
+        points_nr: parseInt(tournamentForm.points_nr),
+        organizer_name: tournamentForm.organizer_name || null,
+        rules: tournamentForm.rules || null,
+      }]);
+      if (error) throw error;
+      setShowTournamentModal(false);
+      resetTournamentForm();
+      await fetchShowcaseData();
+    } catch (err) {
+      alert(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setSavingTournament(false);
+    }
+  };
+
+  const handleUpdateTournament = async () => {
+    if (!editingTournament) return;
+    setSavingTournament(true);
+    try {
+      const { error } = await supabase.from('showcase_tournaments').update({
+        name: tournamentForm.name,
+        short_name: tournamentForm.short_name || null,
+        format: tournamentForm.format,
+        overs: parseInt(tournamentForm.overs),
+        venue: tournamentForm.venue,
+        venue_address: tournamentForm.venue_address || null,
+        start_date: tournamentForm.start_date,
+        end_date: tournamentForm.end_date || null,
+        status: tournamentForm.status,
+        total_teams: parseInt(tournamentForm.total_teams),
+        stage_type: tournamentForm.stage_type,
+        points_win: parseInt(tournamentForm.points_win),
+        points_loss: parseInt(tournamentForm.points_loss),
+        points_draw: parseInt(tournamentForm.points_draw),
+        points_nr: parseInt(tournamentForm.points_nr),
+        organizer_name: tournamentForm.organizer_name || null,
+        rules: tournamentForm.rules || null,
+      }).eq('id', editingTournament.id);
+      if (error) throw error;
+      setEditingTournament(null);
+      resetTournamentForm();
+      await fetchShowcaseData();
+    } catch (err) {
+      alert(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setSavingTournament(false);
+    }
+  };
+
+  const handleDeleteTournament = async (id: string, name: string) => {
+    if (!confirm(`Delete "${name}"? This removes ALL teams, fixtures, and stats. Cannot be undone.`)) return;
+    try {
+      const { error } = await supabase.from('showcase_tournaments').delete().eq('id', id);
+      if (error) throw error;
+      await fetchShowcaseData();
+    } catch (err) {
+      alert(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  const openEditTournament = (t: ShowcaseTournament) => {
+    setEditingTournament(t);
+    setTournamentForm({
+      name: t.name, short_name: t.short_name || '', slug: t.slug, format: t.format, overs: t.overs.toString(),
+      venue: t.venue, venue_address: t.venue_address || '', start_date: t.start_date, end_date: t.end_date || '',
+      status: t.status, stage_type: t.stage_type, points_win: t.points_win.toString(), points_loss: t.points_loss.toString(),
+      points_draw: t.points_draw.toString(), points_nr: t.points_nr.toString(), organizer_name: t.organizer_name || '',
+      rules: t.rules || '', total_teams: t.total_teams.toString(),
+    });
+  };
+
+  const handleAddTeam = async () => {
+    if (!selectedTournamentId) return;
+    setSavingTeam(true);
+    try {
+      const tournament = showcaseTournaments.find(t => t.id === selectedTournamentId);
+      let logoUrl: string | null = null;
+      if (teamLogoFile && tournament) {
+        const shortName = teamForm.short_name || teamForm.name.substring(0, 3).toLowerCase();
+        logoUrl = await uploadTeamLogo(teamLogoFile, shortName, tournament.slug);
+      }
+      const { error } = await supabase.from('showcase_teams').insert([{
+        tournament_id: selectedTournamentId,
+        name: teamForm.name,
+        short_name: teamForm.short_name || null,
+        primary_color: teamForm.primary_color,
+        captain_name: teamForm.captain_name || null,
+        sort_order: parseInt(teamForm.sort_order) || 0,
+        logo_url: logoUrl,
+      }]);
+      if (error) throw error;
+      setShowTeamModal(false);
+      resetTeamForm();
+      await fetchShowcaseData();
+    } catch (err) {
+      alert(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setSavingTeam(false);
+    }
+  };
+
+  const handleUpdateTeam = async () => {
+    if (!editingTeam) return;
+    setSavingTeam(true);
+    try {
+      const tournament = showcaseTournaments.find(t => t.id === editingTeam.tournament_id);
+      let logoUrl: string | null | undefined = undefined;
+      if (teamLogoFile && tournament) {
+        const shortName = teamForm.short_name || teamForm.name.substring(0, 3).toLowerCase();
+        logoUrl = await uploadTeamLogo(teamLogoFile, shortName, tournament.slug);
+      }
+      const updates: Record<string, unknown> = {
+        name: teamForm.name,
+        short_name: teamForm.short_name || null,
+        primary_color: teamForm.primary_color,
+        captain_name: teamForm.captain_name || null,
+        sort_order: parseInt(teamForm.sort_order) || 0,
+      };
+      if (logoUrl !== undefined) updates.logo_url = logoUrl;
+      const { error } = await supabase.from('showcase_teams').update(updates).eq('id', editingTeam.id);
+      if (error) throw error;
+      setEditingTeam(null);
+      resetTeamForm();
+      await fetchShowcaseData();
+    } catch (err) {
+      alert(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setSavingTeam(false);
+    }
+  };
+
+  const handleDeleteTeam = async (id: string, name: string) => {
+    if (!confirm(`Delete team "${name}"? This also removes all their fixtures.`)) return;
+    try {
+      const { error } = await supabase.from('showcase_teams').delete().eq('id', id);
+      if (error) throw error;
+      await fetchShowcaseData();
+    } catch (err) {
+      alert(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  const openEditTeam = (team: ShowcaseTeam) => {
+    setEditingTeam(team);
+    setTeamForm({
+      name: team.name, short_name: team.short_name || '', primary_color: team.primary_color,
+      captain_name: team.captain_name || '', sort_order: team.sort_order.toString(),
+    });
+    setTeamLogoPreview(team.logo_url || null);
+    setTeamLogoFile(null);
+  };
+
+  const generateRoundRobinFixtures = async (tournamentId: string) => {
+    const tTeams = showcaseTeams.filter(t => t.tournament_id === tournamentId);
+    if (tTeams.length < 2) { alert('Need at least 2 teams'); return; }
+
+    const existingFixtures = showcaseFixtures.filter(f => f.tournament_id === tournamentId);
+    if (existingFixtures.length > 0) {
+      if (!confirm(`This will delete ${existingFixtures.length} existing fixtures and generate new ones. Continue?`)) return;
+      const { error: delErr } = await supabase.from('showcase_fixtures').delete().eq('tournament_id', tournamentId);
+      if (delErr) { alert(`Failed: ${delErr.message}`); return; }
+    }
+
+    setGeneratingFixtures(true);
+    try {
+      const newFixtures: { tournament_id: string; match_number: number; team_a_id: string; team_b_id: string }[] = [];
+      let matchNumber = 1;
+      for (let i = 0; i < tTeams.length; i++) {
+        for (let j = i + 1; j < tTeams.length; j++) {
+          newFixtures.push({ tournament_id: tournamentId, match_number: matchNumber++, team_a_id: tTeams[i].id, team_b_id: tTeams[j].id });
+        }
+      }
+      const { error } = await supabase.from('showcase_fixtures').insert(newFixtures);
+      if (error) throw error;
+      await supabase.from('showcase_tournaments').update({ total_teams: tTeams.length }).eq('id', tournamentId);
+      await fetchShowcaseData();
+      alert(`Generated ${newFixtures.length} fixtures for ${tTeams.length} teams`);
+    } catch (err) {
+      alert(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setGeneratingFixtures(false);
+    }
+  };
+
+  const handleDeleteFixture = async (id: string) => {
+    if (!confirm('Delete this fixture?')) return;
+    try {
+      const { error } = await supabase.from('showcase_fixtures').delete().eq('id', id);
+      if (error) throw error;
+      await fetchShowcaseData();
+    } catch (err) {
+      alert(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
   const openFixtureEditor = (fixture: ShowcaseFixture) => {
     setEditingFixture(fixture);
     setFixtureForm({
@@ -1071,21 +1336,31 @@ export function SuperAdmin() {
 
         {/* Showcases Tab */}
         {activeTab === 'showcases' && (
-          showcaseTournaments.length === 0 ? (
-            <div className="text-center py-20">
-              <Trophy className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-              <h3 className="font-bold text-slate-400 mb-1">No showcase tournaments</h3>
-              <p className="text-slate-600 text-sm">Create tournaments via Supabase SQL editor</p>
+          <div className="space-y-6">
+            {/* Header with Add Tournament */}
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">Showcase Tournaments</h3>
+              <button onClick={() => { resetTournamentForm(); setShowTournamentModal(true); }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-sm hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg shadow-amber-500/20">
+                <Plus className="w-4 h-4" /> Add Tournament
+              </button>
             </div>
-          ) : (
-            <div className="space-y-6">
-              {showcaseTournaments.map(tournament => {
+
+            {showcaseTournaments.length === 0 ? (
+              <div className="text-center py-20">
+                <Trophy className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+                <h3 className="font-bold text-slate-400 mb-1">No showcase tournaments</h3>
+                <p className="text-slate-600 text-sm">Click "Add Tournament" to create one</p>
+              </div>
+            ) : (
+              showcaseTournaments.map(tournament => {
                 const tournamentTeams = showcaseTeams.filter(t => t.tournament_id === tournament.id);
                 const tournamentFixtures = showcaseFixtures.filter(f => f.tournament_id === tournament.id);
+                const nC2 = tournamentTeams.length * (tournamentTeams.length - 1) / 2;
 
                 return (
                   <div key={tournament.id} className="bg-white/[0.03] backdrop-blur-sm rounded-2xl border border-white/5 p-6">
-                    {/* Tournament header */}
+                    {/* Tournament header with CRUD */}
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-bold text-white">{tournament.name}</h3>
@@ -1100,29 +1375,57 @@ export function SuperAdmin() {
                           </span>
                         </p>
                       </div>
-                      <a
-                        href={`/tournament/${tournament.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
-                      >
-                        <Eye className="w-3.5 h-3.5" /> View Page
-                      </a>
+                      <div className="flex items-center gap-1.5">
+                        <a href={`/tournament/${tournament.slug}`} target="_blank" rel="noopener noreferrer"
+                          className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all" title="View Page">
+                          <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                        </a>
+                        <button onClick={() => openEditTournament(tournament)}
+                          className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all" title="Edit">
+                          <Edit className="w-3.5 h-3.5 text-slate-400" />
+                        </button>
+                        <button onClick={() => handleDeleteTournament(tournament.id, tournament.name)}
+                          className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-rose-500/20 transition-all" title="Delete">
+                          <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-rose-400" />
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Teams row */}
-                    <div className="flex flex-wrap gap-2 mb-5">
+                    {/* Teams row with Add Team */}
+                    <div className="flex items-center gap-2 flex-wrap mb-5">
+                      <button onClick={() => { setSelectedTournamentId(tournament.id); resetTeamForm(); setShowTeamModal(true); }}
+                        className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border border-dashed border-white/20 text-slate-400 hover:text-white hover:border-white/40 transition-all">
+                        <Plus className="w-3 h-3" /> Add Team
+                      </button>
                       {tournamentTeams.map(team => (
-                        <span
-                          key={team.id}
-                          className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border border-white/10"
-                          style={{ backgroundColor: team.primary_color + '20', color: team.primary_color }}
-                        >
-                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: team.primary_color }} />
+                        <span key={team.id}
+                          className="group flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border border-white/10"
+                          style={{ backgroundColor: team.primary_color + '20', color: team.primary_color }}>
+                          {team.logo_url ? (
+                            <img src={team.logo_url} alt="" className="w-4 h-4 rounded object-cover" />
+                          ) : (
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: team.primary_color }} />
+                          )}
                           {team.name}
+                          <button onClick={() => openEditTeam(team)} className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Edit className="w-3 h-3" />
+                          </button>
+                          <button onClick={() => handleDeleteTeam(team.id, team.name)} className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400">
+                            <X className="w-3 h-3" />
+                          </button>
                         </span>
                       ))}
                     </div>
+
+                    {/* Generate Fixtures button */}
+                    {tournament.stage_type === 'round_robin' && tournamentTeams.length >= 2 && (
+                      <div className="mb-4">
+                        <button onClick={() => generateRoundRobinFixtures(tournament.id)} disabled={generatingFixtures}
+                          className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-violet-500/20 text-violet-400 border border-violet-500/20 hover:bg-violet-500/30 transition-all disabled:opacity-50">
+                          <Zap className="w-3.5 h-3.5" /> {generatingFixtures ? 'Generating...' : `Auto-Generate Round Robin (${nC2} matches)`}
+                        </button>
+                      </div>
+                    )}
 
                     {/* Fixtures list */}
                     <div className="space-y-2">
@@ -1130,35 +1433,20 @@ export function SuperAdmin() {
                       {tournamentFixtures.map(fixture => {
                         const teamA = fixture.team_a as ShowcaseTeam | undefined;
                         const teamB = fixture.team_b as ShowcaseTeam | undefined;
-
                         return (
-                          <div
-                            key={fixture.id}
-                            className="flex items-center justify-between bg-white/[0.03] rounded-xl border border-white/5 p-3 hover:bg-white/[0.05] transition-all"
-                          >
+                          <div key={fixture.id}
+                            className="flex items-center justify-between bg-white/[0.03] rounded-xl border border-white/5 p-3 hover:bg-white/[0.05] transition-all">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <span className="text-[10px] font-bold text-slate-600 w-6 text-center shrink-0">
-                                #{fixture.match_number}
-                              </span>
+                              <span className="text-[10px] font-bold text-slate-600 w-6 text-center shrink-0">#{fixture.match_number}</span>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-semibold text-sm text-white">
-                                    {teamA?.name || 'TBA'}
-                                  </span>
-                                  {fixture.team_a_score && (
-                                    <span className="text-xs font-bold text-emerald-400">{fixture.team_a_score}</span>
-                                  )}
+                                  <span className="font-semibold text-sm text-white">{teamA?.name || 'TBA'}</span>
+                                  {fixture.team_a_score && <span className="text-xs font-bold text-emerald-400">{fixture.team_a_score}</span>}
                                   <span className="text-xs text-slate-600">vs</span>
-                                  <span className="font-semibold text-sm text-white">
-                                    {teamB?.name || 'TBA'}
-                                  </span>
-                                  {fixture.team_b_score && (
-                                    <span className="text-xs font-bold text-emerald-400">{fixture.team_b_score}</span>
-                                  )}
+                                  <span className="font-semibold text-sm text-white">{teamB?.name || 'TBA'}</span>
+                                  {fixture.team_b_score && <span className="text-xs font-bold text-emerald-400">{fixture.team_b_score}</span>}
                                 </div>
-                                {fixture.result_summary && (
-                                  <p className="text-[11px] text-slate-500 mt-0.5">{fixture.result_summary}</p>
-                                )}
+                                {fixture.result_summary && <p className="text-[11px] text-slate-500 mt-0.5">{fixture.result_summary}</p>}
                               </div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
@@ -1170,12 +1458,13 @@ export function SuperAdmin() {
                               }`}>
                                 {fixture.status === 'no_result' ? 'NR' : fixture.status.toUpperCase()}
                               </span>
-                              <button
-                                onClick={() => openFixtureEditor(fixture)}
-                                className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
-                                title="Update Score"
-                              >
+                              <button onClick={() => openFixtureEditor(fixture)}
+                                className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all" title="Update Score">
                                 <Edit className="w-3.5 h-3.5 text-slate-400" />
+                              </button>
+                              <button onClick={() => handleDeleteFixture(fixture.id)}
+                                className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-rose-500/20 transition-all" title="Delete">
+                                <Trash2 className="w-3 h-3 text-slate-500 hover:text-rose-400" />
                               </button>
                             </div>
                           </div>
@@ -1184,9 +1473,9 @@ export function SuperAdmin() {
                     </div>
                   </div>
                 );
-              })}
-            </div>
-          )
+              })
+            )}
+          </div>
         )}
 
         {/* Bottom spacing */}
@@ -1482,6 +1771,258 @@ export function SuperAdmin() {
           <Button variant="secondary" onClick={() => setEditingFixture(null)}>Cancel</Button>
           <Button onClick={handleSaveFixture} disabled={savingFixture}>
             <Save className="w-4 h-4" /> {savingFixture ? 'Saving...' : 'Save Score'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Tournament Add/Edit Modal */}
+      <Modal
+        isOpen={showTournamentModal || !!editingTournament}
+        onClose={() => { setShowTournamentModal(false); setEditingTournament(null); resetTournamentForm(); }}
+        title={editingTournament ? 'Edit Tournament' : 'Add Tournament'}
+      >
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Tournament Name *"
+              placeholder="SCCL Champions League"
+              value={tournamentForm.name}
+              onChange={e => setTournamentForm(f => ({ ...f, name: e.target.value }))}
+            />
+            <Input
+              label="Short Name"
+              placeholder="SCCL 2026"
+              value={tournamentForm.short_name}
+              onChange={e => setTournamentForm(f => ({ ...f, short_name: e.target.value }))}
+            />
+          </div>
+
+          {!editingTournament && (
+            <Input
+              label="Slug (URL path)"
+              placeholder="sccl (auto-generated from name if blank)"
+              value={tournamentForm.slug}
+              onChange={e => setTournamentForm(f => ({ ...f, slug: e.target.value }))}
+            />
+          )}
+
+          <div className="grid grid-cols-3 gap-3">
+            <Select
+              label="Format"
+              value={tournamentForm.format}
+              onChange={e => setTournamentForm(f => ({ ...f, format: e.target.value }))}
+              options={[
+                { value: 'Tennis Ball', label: 'Tennis Ball' },
+                { value: 'Leather Ball', label: 'Leather Ball' },
+                { value: 'T20', label: 'T20' },
+                { value: 'ODI', label: 'ODI' },
+              ]}
+            />
+            <Input
+              label="Overs"
+              type="number"
+              value={tournamentForm.overs}
+              onChange={e => setTournamentForm(f => ({ ...f, overs: e.target.value }))}
+            />
+            <Input
+              label="Total Teams"
+              type="number"
+              value={tournamentForm.total_teams}
+              onChange={e => setTournamentForm(f => ({ ...f, total_teams: e.target.value }))}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Venue *"
+              placeholder="MCA Stadium, Pune"
+              value={tournamentForm.venue}
+              onChange={e => setTournamentForm(f => ({ ...f, venue: e.target.value }))}
+            />
+            <Input
+              label="Venue Address"
+              placeholder="Full address"
+              value={tournamentForm.venue_address}
+              onChange={e => setTournamentForm(f => ({ ...f, venue_address: e.target.value }))}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Start Date *"
+              type="date"
+              value={tournamentForm.start_date}
+              onChange={e => setTournamentForm(f => ({ ...f, start_date: e.target.value }))}
+            />
+            <Input
+              label="End Date"
+              type="date"
+              value={tournamentForm.end_date}
+              onChange={e => setTournamentForm(f => ({ ...f, end_date: e.target.value }))}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="Status"
+              value={tournamentForm.status}
+              onChange={e => setTournamentForm(f => ({ ...f, status: e.target.value }))}
+              options={[
+                { value: 'upcoming', label: 'Upcoming' },
+                { value: 'live', label: 'Live' },
+                { value: 'completed', label: 'Completed' },
+              ]}
+            />
+            <Select
+              label="Stage Type"
+              value={tournamentForm.stage_type}
+              onChange={e => setTournamentForm(f => ({ ...f, stage_type: e.target.value }))}
+              options={[
+                { value: 'round_robin', label: 'Round Robin' },
+                { value: 'knockout', label: 'Knockout' },
+                { value: 'group_stage', label: 'Group Stage' },
+              ]}
+            />
+          </div>
+
+          <div className="grid grid-cols-4 gap-3">
+            <Input
+              label="Pts (Win)"
+              type="number"
+              value={tournamentForm.points_win}
+              onChange={e => setTournamentForm(f => ({ ...f, points_win: e.target.value }))}
+            />
+            <Input
+              label="Pts (Loss)"
+              type="number"
+              value={tournamentForm.points_loss}
+              onChange={e => setTournamentForm(f => ({ ...f, points_loss: e.target.value }))}
+            />
+            <Input
+              label="Pts (Draw)"
+              type="number"
+              value={tournamentForm.points_draw}
+              onChange={e => setTournamentForm(f => ({ ...f, points_draw: e.target.value }))}
+            />
+            <Input
+              label="Pts (NR)"
+              type="number"
+              value={tournamentForm.points_nr}
+              onChange={e => setTournamentForm(f => ({ ...f, points_nr: e.target.value }))}
+            />
+          </div>
+
+          <Input
+            label="Organizer Name"
+            placeholder="SCCL Committee"
+            value={tournamentForm.organizer_name}
+            onChange={e => setTournamentForm(f => ({ ...f, organizer_name: e.target.value }))}
+          />
+
+          <TextArea
+            label="Rules"
+            placeholder="Tournament rules..."
+            value={tournamentForm.rules}
+            onChange={e => setTournamentForm(f => ({ ...f, rules: e.target.value }))}
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <Button variant="secondary" onClick={() => { setShowTournamentModal(false); setEditingTournament(null); resetTournamentForm(); }}>Cancel</Button>
+          <Button onClick={editingTournament ? handleUpdateTournament : handleAddTournament} disabled={savingTournament || !tournamentForm.name || !tournamentForm.venue || !tournamentForm.start_date}>
+            <Save className="w-4 h-4" /> {savingTournament ? 'Saving...' : editingTournament ? 'Update' : 'Create'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Team Add/Edit Modal */}
+      <Modal
+        isOpen={showTeamModal || !!editingTeam}
+        onClose={() => { setShowTeamModal(false); setEditingTeam(null); resetTeamForm(); }}
+        title={editingTeam ? 'Edit Team' : 'Add Team'}
+      >
+        <div className="space-y-4">
+          {/* Logo Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Team Logo</label>
+            <div className="flex items-center gap-4">
+              {teamLogoPreview ? (
+                <div className="relative">
+                  <img src={teamLogoPreview} alt="Logo preview" className="w-16 h-16 rounded-lg object-cover border-2 border-gray-200 dark:border-gray-600" />
+                  <button
+                    onClick={() => { setTeamLogoFile(null); setTeamLogoPreview(null); }}
+                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
+                  <Upload className="w-6 h-6 text-gray-400" />
+                </div>
+              )}
+              <label className="cursor-pointer px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                {teamLogoPreview ? 'Change' : 'Upload'}
+                <input type="file" accept="image/*" className="hidden" onChange={handleTeamLogoSelect} />
+              </label>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Team Name *"
+              placeholder="Shivaji Strikers"
+              value={teamForm.name}
+              onChange={e => setTeamForm(f => ({ ...f, name: e.target.value }))}
+            />
+            <Input
+              label="Short Name"
+              placeholder="SS"
+              value={teamForm.short_name}
+              onChange={e => setTeamForm(f => ({ ...f, short_name: e.target.value }))}
+            />
+          </div>
+
+          {/* Color Picker */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Primary Color</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={teamForm.primary_color}
+                onChange={e => setTeamForm(f => ({ ...f, primary_color: e.target.value }))}
+                className="w-10 h-10 rounded-lg border-2 border-gray-200 dark:border-gray-600 cursor-pointer"
+              />
+              <Input
+                label=""
+                placeholder="#10b981"
+                value={teamForm.primary_color}
+                onChange={e => setTeamForm(f => ({ ...f, primary_color: e.target.value }))}
+              />
+              <div className="w-10 h-10 rounded-lg flex-shrink-0" style={{ backgroundColor: teamForm.primary_color }} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Captain Name"
+              placeholder="Virat Kohli"
+              value={teamForm.captain_name}
+              onChange={e => setTeamForm(f => ({ ...f, captain_name: e.target.value }))}
+            />
+            <Input
+              label="Sort Order"
+              type="number"
+              value={teamForm.sort_order}
+              onChange={e => setTeamForm(f => ({ ...f, sort_order: e.target.value }))}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <Button variant="secondary" onClick={() => { setShowTeamModal(false); setEditingTeam(null); resetTeamForm(); }}>Cancel</Button>
+          <Button onClick={editingTeam ? handleUpdateTeam : handleAddTeam} disabled={savingTeam || !teamForm.name}>
+            <Save className="w-4 h-4" /> {savingTeam ? 'Saving...' : editingTeam ? 'Update Team' : 'Add Team'}
           </Button>
         </div>
       </Modal>

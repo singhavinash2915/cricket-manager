@@ -163,6 +163,93 @@ function computeTopPerformers(stats: ShowcasePlayerStat[], teams: ShowcaseTeam[]
   return { mostRuns, mostWickets, mvp };
 }
 
+interface MomLeaderboardEntry {
+  name: string;
+  teamName: string;
+  teamColor: string;
+  count: number;
+}
+
+interface AwardData {
+  momLeaderboard: MomLeaderboardEntry[];
+  mostWinsTeam: { team: ShowcaseTeam; wins: number } | null;
+  highestTeamScore: { team: ShowcaseTeam; score: string; runs: number } | null;
+}
+
+function computeAwards(
+  standings: TeamStanding[],
+  fixtures: ShowcaseFixture[],
+  teams: ShowcaseTeam[]
+): AwardData {
+  const teamMap = new Map(teams.map(t => [t.id, t]));
+
+  // MoM Leaderboard from fixture man_of_match_name
+  const momMap = new Map<string, MomLeaderboardEntry>();
+  for (const f of fixtures) {
+    if (f.status === 'completed' && f.man_of_match_name) {
+      const key = f.man_of_match_name;
+      const team = f.man_of_match_team_id ? teamMap.get(f.man_of_match_team_id) : null;
+      const existing = momMap.get(key) || {
+        name: f.man_of_match_name,
+        teamName: team?.name || '',
+        teamColor: team?.primary_color || '#10b981',
+        count: 0,
+      };
+      existing.count++;
+      momMap.set(key, existing);
+    }
+  }
+  const momLeaderboard = Array.from(momMap.values()).sort((a, b) => b.count - a.count);
+
+  // Most Wins Team
+  const mostWinsStanding = standings.length > 0
+    ? standings.reduce((best, s) => s.won > best.won ? s : best, standings[0])
+    : null;
+  const mostWinsTeam = mostWinsStanding && mostWinsStanding.won > 0
+    ? { team: mostWinsStanding.team, wins: mostWinsStanding.won }
+    : null;
+
+  // Highest Team Score in a single innings
+  let highestTeamScore: AwardData['highestTeamScore'] = null;
+  for (const f of fixtures) {
+    if (f.status !== 'completed') continue;
+    if (f.team_a_runs != null && (highestTeamScore === null || f.team_a_runs > highestTeamScore.runs)) {
+      const team = teamMap.get(f.team_a_id);
+      if (team) highestTeamScore = { team, score: f.team_a_score || `${f.team_a_runs}`, runs: f.team_a_runs };
+    }
+    if (f.team_b_runs != null && (highestTeamScore === null || f.team_b_runs > highestTeamScore.runs)) {
+      const team = teamMap.get(f.team_b_id);
+      if (team) highestTeamScore = { team, score: f.team_b_score || `${f.team_b_runs}`, runs: f.team_b_runs };
+    }
+  }
+
+  return { momLeaderboard, mostWinsTeam, highestTeamScore };
+}
+
+interface TeamChartData {
+  teamName: string;
+  shortName: string;
+  color: string;
+  won: number;
+  lost: number;
+  drawn: number;
+  runsScored: number;
+  runsConceded: number;
+}
+
+function computeTeamChartData(standings: TeamStanding[]): TeamChartData[] {
+  return standings.map(s => ({
+    teamName: s.team.name,
+    shortName: s.team.short_name || s.team.name.substring(0, 3).toUpperCase(),
+    color: s.team.primary_color,
+    won: s.won,
+    lost: s.lost,
+    drawn: s.drawn,
+    runsScored: s.runsScored,
+    runsConceded: Math.round(s.runsConceded),
+  }));
+}
+
 export function useShowcaseTournament(slug: string) {
   const [tournament, setTournament] = useState<ShowcaseTournament | null>(null);
   const [teams, setTeams] = useState<ShowcaseTeam[]>([]);
@@ -215,6 +302,8 @@ export function useShowcaseTournament(slug: string) {
 
   const standings = useMemo(() => computeStandings(teams, fixtures, tournament), [teams, fixtures, tournament]);
   const topPerformers = useMemo(() => computeTopPerformers(playerStats, teams), [playerStats, teams]);
+  const awards = useMemo(() => computeAwards(standings, fixtures, teams), [standings, fixtures, teams]);
+  const teamChartData = useMemo(() => computeTeamChartData(standings), [standings]);
 
-  return { tournament, teams, fixtures, playerStats, standings, topPerformers, loading, error, refetch: fetchTournament };
+  return { tournament, teams, fixtures, playerStats, standings, topPerformers, awards, teamChartData, loading, error, refetch: fetchTournament };
 }
