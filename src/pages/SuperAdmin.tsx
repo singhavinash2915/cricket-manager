@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, SUPER_ADMIN_PASSWORD } from '../lib/supabase';
-import type { Club, SubscriptionOrder, ShowcaseTournament, ShowcaseTeam, ShowcaseFixture } from '../types';
+import type { Club, SubscriptionOrder, ShowcaseTournament, ShowcaseTeam, ShowcaseFixture, ShowcaseSponsor } from '../types';
 import { Button } from '../components/ui/Button';
 import { Input, TextArea, Select } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
@@ -55,6 +55,15 @@ export function SuperAdmin() {
   const [teamLogoFile, setTeamLogoFile] = useState<File | null>(null);
   const [teamLogoPreview, setTeamLogoPreview] = useState<string | null>(null);
   const [generatingFixtures, setGeneratingFixtures] = useState(false);
+
+  // Sponsor CRUD state
+  const [showcaseSponsors, setShowcaseSponsors] = useState<ShowcaseSponsor[]>([]);
+  const [showSponsorModal, setShowSponsorModal] = useState(false);
+  const [editingSponsor, setEditingSponsor] = useState<ShowcaseSponsor | null>(null);
+  const [sponsorForm, setSponsorForm] = useState({ name: '', website_url: '', tier: 'partner', sort_order: '0' });
+  const [savingSponsor, setSavingSponsor] = useState(false);
+  const [sponsorLogoFile, setSponsorLogoFile] = useState<File | null>(null);
+  const [sponsorLogoPreview, setSponsorLogoPreview] = useState<string | null>(null);
 
   // Payment modal state
   const [paymentClub, setPaymentClub] = useState<Club | null>(null);
@@ -152,6 +161,13 @@ export function SuperAdmin() {
           .in('tournament_id', tournamentIds)
           .order('match_number');
         setShowcaseFixtures(fixturesData || []);
+
+        const { data: sponsorsData } = await supabase
+          .from('showcase_sponsors')
+          .select('*')
+          .in('tournament_id', tournamentIds)
+          .order('sort_order');
+        setShowcaseSponsors(sponsorsData || []);
       }
     } catch (err) {
       console.error('Failed to fetch showcase data:', err);
@@ -835,6 +851,115 @@ export function SuperAdmin() {
     }
   };
 
+  // Sponsor CRUD handlers
+  const resetSponsorForm = () => {
+    setSponsorForm({ name: '', website_url: '', tier: 'partner', sort_order: '0' });
+    setSponsorLogoFile(null);
+    setSponsorLogoPreview(null);
+  };
+
+  const uploadSponsorLogo = async (file: File, name: string, tournamentSlug: string): Promise<string> => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+    const safeName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const filePath = `showcase/${tournamentSlug}/sponsors/${safeName}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from('club-logos')
+      .upload(filePath, file, { cacheControl: '3600', upsert: true });
+    if (uploadError) throw uploadError;
+    const { data: { publicUrl } } = supabase.storage
+      .from('club-logos')
+      .getPublicUrl(filePath);
+    return publicUrl;
+  };
+
+  const handleSponsorLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSponsorLogoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setSponsorLogoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddSponsor = async () => {
+    if (!selectedTournamentId) return;
+    setSavingSponsor(true);
+    try {
+      const tournament = showcaseTournaments.find(t => t.id === selectedTournamentId);
+      let logoUrl: string | null = null;
+      if (sponsorLogoFile && tournament) {
+        logoUrl = await uploadSponsorLogo(sponsorLogoFile, sponsorForm.name, tournament.slug);
+      }
+      const { error } = await supabase.from('showcase_sponsors').insert([{
+        tournament_id: selectedTournamentId,
+        name: sponsorForm.name,
+        logo_url: logoUrl,
+        website_url: sponsorForm.website_url || null,
+        tier: sponsorForm.tier,
+        sort_order: parseInt(sponsorForm.sort_order) || 0,
+      }]);
+      if (error) throw error;
+      setShowSponsorModal(false);
+      resetSponsorForm();
+      await fetchShowcaseData();
+    } catch (err) {
+      alert(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setSavingSponsor(false);
+    }
+  };
+
+  const handleUpdateSponsor = async () => {
+    if (!editingSponsor) return;
+    setSavingSponsor(true);
+    try {
+      const tournament = showcaseTournaments.find(t => t.id === editingSponsor.tournament_id);
+      let logoUrl: string | null | undefined = undefined;
+      if (sponsorLogoFile && tournament) {
+        logoUrl = await uploadSponsorLogo(sponsorLogoFile, sponsorForm.name, tournament.slug);
+      }
+      const updates: Record<string, unknown> = {
+        name: sponsorForm.name,
+        website_url: sponsorForm.website_url || null,
+        tier: sponsorForm.tier,
+        sort_order: parseInt(sponsorForm.sort_order) || 0,
+      };
+      if (logoUrl !== undefined) updates.logo_url = logoUrl;
+      const { error } = await supabase.from('showcase_sponsors').update(updates).eq('id', editingSponsor.id);
+      if (error) throw error;
+      setEditingSponsor(null);
+      resetSponsorForm();
+      await fetchShowcaseData();
+    } catch (err) {
+      alert(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setSavingSponsor(false);
+    }
+  };
+
+  const handleDeleteSponsor = async (id: string, name: string) => {
+    if (!confirm(`Delete sponsor "${name}"?`)) return;
+    try {
+      const { error } = await supabase.from('showcase_sponsors').delete().eq('id', id);
+      if (error) throw error;
+      await fetchShowcaseData();
+    } catch (err) {
+      alert(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  const openEditSponsor = (sponsor: ShowcaseSponsor) => {
+    setEditingSponsor(sponsor);
+    setSponsorForm({
+      name: sponsor.name,
+      website_url: sponsor.website_url || '',
+      tier: sponsor.tier,
+      sort_order: sponsor.sort_order.toString(),
+    });
+    setSponsorLogoPreview(sponsor.logo_url || null);
+    setSponsorLogoFile(null);
+  };
+
   const openFixtureEditor = (fixture: ShowcaseFixture) => {
     setEditingFixture(fixture);
     setFixtureForm({
@@ -1411,6 +1536,28 @@ export function SuperAdmin() {
                             <Edit className="w-3 h-3" />
                           </button>
                           <button onClick={() => handleDeleteTeam(team.id, team.name)} className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Sponsors row with Add Sponsor */}
+                    <div className="flex items-center gap-2 flex-wrap mb-5">
+                      <button onClick={() => { setSelectedTournamentId(tournament.id); resetSponsorForm(); setShowSponsorModal(true); }}
+                        className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border border-dashed border-amber-500/30 text-amber-400/60 hover:text-amber-400 hover:border-amber-500/50 transition-all">
+                        <Plus className="w-3 h-3" /> Add Sponsor
+                      </button>
+                      {showcaseSponsors.filter(s => s.tournament_id === tournament.id).map(sponsor => (
+                        <span key={sponsor.id}
+                          className="group flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-400">
+                          {sponsor.logo_url && <img src={sponsor.logo_url} alt="" className="w-4 h-4 rounded object-cover" />}
+                          {sponsor.name}
+                          <span className="text-[10px] text-amber-500/50">({sponsor.tier})</span>
+                          <button onClick={() => openEditSponsor(sponsor)} className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Edit className="w-3 h-3" />
+                          </button>
+                          <button onClick={() => handleDeleteSponsor(sponsor.id, sponsor.name)} className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400">
                             <X className="w-3 h-3" />
                           </button>
                         </span>
@@ -2023,6 +2170,83 @@ export function SuperAdmin() {
           <Button variant="secondary" onClick={() => { setShowTeamModal(false); setEditingTeam(null); resetTeamForm(); }}>Cancel</Button>
           <Button onClick={editingTeam ? handleUpdateTeam : handleAddTeam} disabled={savingTeam || !teamForm.name}>
             <Save className="w-4 h-4" /> {savingTeam ? 'Saving...' : editingTeam ? 'Update Team' : 'Add Team'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Sponsor Add/Edit Modal */}
+      <Modal
+        isOpen={showSponsorModal || !!editingSponsor}
+        onClose={() => { setShowSponsorModal(false); setEditingSponsor(null); resetSponsorForm(); }}
+        title={editingSponsor ? 'Edit Sponsor' : 'Add Sponsor'}
+      >
+        <div className="space-y-4">
+          {/* Sponsor Logo Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sponsor Logo</label>
+            <div className="flex items-center gap-4">
+              {sponsorLogoPreview ? (
+                <div className="relative">
+                  <img src={sponsorLogoPreview} alt="Logo preview" className="w-16 h-16 rounded-lg object-contain border-2 border-gray-200 dark:border-gray-600 bg-white p-1" />
+                  <button
+                    onClick={() => { setSponsorLogoFile(null); setSponsorLogoPreview(null); }}
+                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
+                  <Upload className="w-6 h-6 text-gray-400" />
+                </div>
+              )}
+              <label className="cursor-pointer px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                {sponsorLogoPreview ? 'Change' : 'Upload'}
+                <input type="file" accept="image/*" className="hidden" onChange={handleSponsorLogoSelect} />
+              </label>
+            </div>
+          </div>
+
+          <Input
+            label="Sponsor Name *"
+            placeholder="Acme Corp"
+            value={sponsorForm.name}
+            onChange={e => setSponsorForm(f => ({ ...f, name: e.target.value }))}
+          />
+
+          <Input
+            label="Website URL"
+            placeholder="https://example.com"
+            value={sponsorForm.website_url}
+            onChange={e => setSponsorForm(f => ({ ...f, website_url: e.target.value }))}
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="Tier"
+              value={sponsorForm.tier}
+              onChange={e => setSponsorForm(f => ({ ...f, tier: e.target.value }))}
+              options={[
+                { value: 'title', label: 'Title Sponsor' },
+                { value: 'powered_by', label: 'Powered By' },
+                { value: 'gold', label: 'Gold Sponsor' },
+                { value: 'silver', label: 'Silver Sponsor' },
+                { value: 'partner', label: 'Partner' },
+              ]}
+            />
+            <Input
+              label="Sort Order"
+              type="number"
+              value={sponsorForm.sort_order}
+              onChange={e => setSponsorForm(f => ({ ...f, sort_order: e.target.value }))}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <Button variant="secondary" onClick={() => { setShowSponsorModal(false); setEditingSponsor(null); resetSponsorForm(); }}>Cancel</Button>
+          <Button onClick={editingSponsor ? handleUpdateSponsor : handleAddSponsor} disabled={savingSponsor || !sponsorForm.name}>
+            <Save className="w-4 h-4" /> {savingSponsor ? 'Saving...' : editingSponsor ? 'Update' : 'Add Sponsor'}
           </Button>
         </div>
       </Modal>

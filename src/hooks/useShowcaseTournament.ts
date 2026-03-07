@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import type { ShowcaseTournament, ShowcaseTeam, ShowcaseFixture, ShowcasePlayerStat, TeamStanding } from '../types';
+import type { ShowcaseTournament, ShowcaseTeam, ShowcaseFixture, ShowcasePlayerStat, ShowcaseSponsor, TeamStanding } from '../types';
 
 function convertOversToDecimal(overs: number): number {
   const fullOvers = Math.floor(overs);
@@ -255,6 +255,7 @@ export function useShowcaseTournament(slug: string) {
   const [teams, setTeams] = useState<ShowcaseTeam[]>([]);
   const [fixtures, setFixtures] = useState<ShowcaseFixture[]>([]);
   const [playerStats, setPlayerStats] = useState<ShowcasePlayerStat[]>([]);
+  const [sponsors, setSponsors] = useState<ShowcaseSponsor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -287,10 +288,17 @@ export function useShowcaseTournament(slug: string) {
         .select('*')
         .eq('tournament_id', tourney.id);
 
+      const { data: sponsorsData } = await supabase
+        .from('showcase_sponsors')
+        .select('*')
+        .eq('tournament_id', tourney.id)
+        .order('sort_order');
+
       setTournament(tourney);
       setTeams(teamsData || []);
       setFixtures(fixturesData || []);
       setPlayerStats(statsData || []);
+      setSponsors(sponsorsData || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Tournament not found');
     } finally {
@@ -305,5 +313,5 @@ export function useShowcaseTournament(slug: string) {
   const awards = useMemo(() => computeAwards(standings, fixtures, teams), [standings, fixtures, teams]);
   const teamChartData = useMemo(() => computeTeamChartData(standings), [standings]);
 
-  return { tournament, teams, fixtures, playerStats, standings, topPerformers, awards, teamChartData, loading, error, refetch: fetchTournament };
+  return { tournament, teams, fixtures, playerStats, sponsors, standings, topPerformers, awards, teamChartData, loading, error, refetch: fetchTournament };
 }

@@ -180,3 +180,19 @@ INSERT INTO showcase_fixtures (tournament_id, match_number, team_a_id, team_b_id
  (SELECT id FROM showcase_teams WHERE short_name = 'HH' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
  (SELECT id FROM showcase_teams WHERE short_name = 'BB' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
  '2026-03-29', '6:00 PM');
+
+-- Table 5: showcase_sponsors
+CREATE TABLE showcase_sponsors (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  tournament_id UUID NOT NULL REFERENCES showcase_tournaments(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  logo_url TEXT,
+  website_url TEXT,
+  tier TEXT NOT NULL DEFAULT 'partner' CHECK (tier IN ('title', 'powered_by', 'gold', 'silver', 'partner')),
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE showcase_sponsors ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read showcase_sponsors" ON showcase_sponsors FOR SELECT USING (true);
+CREATE POLICY "Anon manage showcase_sponsors" ON showcase_sponsors FOR ALL USING (true);

@@ -38,7 +38,7 @@ function TeamLogo({ team, size = 8, className = '' }: { team: ShowcaseTeam | und
 
 export function TournamentShowcase() {
   const { slug } = useParams<{ slug: string }>();
-  const { tournament, teams, fixtures, standings, topPerformers, awards, teamChartData, loading, error } = useShowcaseTournament(slug || '');
+  const { tournament, teams, fixtures, sponsors, standings, topPerformers, awards, teamChartData, loading, error } = useShowcaseTournament(slug || '');
   const { settings } = usePlatformSettings();
   const [fixtureFilter, setFixtureFilter] = useState<'all' | 'completed' | 'upcoming'>('all');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -185,6 +185,30 @@ export function TournamentShowcase() {
                   className="h-full bg-gradient-to-r from-amber-400 to-emerald-400 rounded-full transition-all duration-1000"
                   style={{ width: `${(completedCount / fixtures.length) * 100}%` }}
                 />
+              </div>
+            </div>
+          )}
+
+          {/* Sponsors — Powered By */}
+          {sponsors.filter(s => s.tier === 'title' || s.tier === 'powered_by').length > 0 && (
+            <div className="mt-10 pt-8 border-t border-white/10">
+              <p className="text-xs uppercase tracking-widest text-slate-400 mb-4">Powered by</p>
+              <div className="flex flex-wrap items-center justify-center gap-8">
+                {sponsors.filter(s => s.tier === 'title' || s.tier === 'powered_by').map(sponsor => (
+                  <a
+                    key={sponsor.id}
+                    href={sponsor.website_url || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                  >
+                    {sponsor.logo_url ? (
+                      <img src={sponsor.logo_url} alt={sponsor.name} className="h-10 md:h-12 object-contain" />
+                    ) : (
+                      <span className="text-white font-bold text-lg">{sponsor.name}</span>
+                    )}
+                  </a>
+                ))}
               </div>
             </div>
           )}
@@ -674,6 +698,28 @@ export function TournamentShowcase() {
             <Link to="/pricing" className="hover:text-emerald-400 transition-colors">Pricing</Link>
             <Link to="/how-it-works" className="hover:text-emerald-400 transition-colors">How It Works</Link>
           </div>
+          {sponsors.length > 0 && (
+            <div className="my-6 py-6 border-t border-b border-gray-800">
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-4">Tournament Partners</p>
+              <div className="flex flex-wrap justify-center gap-8 items-center">
+                {sponsors.map(sponsor => (
+                  <a
+                    key={sponsor.id}
+                    href={sponsor.website_url || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all"
+                  >
+                    {sponsor.logo_url ? (
+                      <img src={sponsor.logo_url} alt={sponsor.name} className="h-8 object-contain" />
+                    ) : (
+                      <span className="text-sm font-semibold text-gray-400">{sponsor.name}</span>
+                    )}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="mt-8 pt-6 border-t border-gray-800">
             <p className="text-xs text-gray-600">Powered by CricMates — Built for cricket lovers across India</p>
           </div>

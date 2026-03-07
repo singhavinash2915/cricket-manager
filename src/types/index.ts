@@ -304,6 +304,17 @@ export interface ShowcasePlayerStat {
   created_at: string;
 }
 
+export interface ShowcaseSponsor {
+  id: string;
+  tournament_id: string;
+  name: string;
+  logo_url: string | null;
+  website_url: string | null;
+  tier: 'title' | 'powered_by' | 'gold' | 'silver' | 'partner';
+  sort_order: number;
+  created_at: string;
+}
+
 export interface TeamStanding {
   team: ShowcaseTeam;
   played: number;
