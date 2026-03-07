@@ -25,7 +25,7 @@ function TeamLogo({ team, size = 'md', className = '' }: { team: ShowcaseTeam | 
   const sizeMap = { sm: 'w-6 h-6', md: 'w-8 h-8', lg: 'w-12 h-12', xl: 'w-16 h-16' };
   const textMap = { sm: 'text-[8px]', md: 'text-[10px]', lg: 'text-sm', xl: 'text-lg' };
   const dim = sizeMap[size];
-  if (!team) return <div className={`${dim} rounded-2xl bg-violet-100 ${className}`} />;
+  if (!team) return <div className={`${dim} rounded-2xl bg-teal-100 ${className}`} />;
   if (team.logo_url) {
     return <img src={team.logo_url} alt={team.name} className={`${dim} rounded-2xl object-cover shrink-0 ${className}`} />;
   }
@@ -36,14 +36,15 @@ function TeamLogo({ team, size = 'md', className = '' }: { team: ShowcaseTeam | 
   );
 }
 
-// Soft pastel palette inspired by the Outstaff dashboard
-const P = {
-  bg: '#f4f0fa',        // soft lavender background
+// Mint-green / teal palette inspired by the UI/UX Kit
+const C = {
+  bg: '#f0f5f4',             // soft sage-gray background
   card: '#ffffff',
-  hero: 'linear-gradient(135deg, #7c5ce0 0%, #a78bfa 40%, #c4b5fd 100%)',
-  accent: '#7c5ce0',    // primary violet
-  accentLight: '#ede9fe',
-  accentSoft: '#ddd6fe',
+  hero: 'linear-gradient(135deg, #2CB5A8 0%, #4ECDC4 50%, #7EDDD6 100%)',
+  accent: '#3BB8AC',         // primary mint-teal
+  accentDark: '#2CA89C',     // darker teal for hover
+  accentLight: '#e6f7f5',    // very light teal tint
+  accentSoft: '#b2e8e3',     // soft teal
   green: '#22c55e',
   greenBg: '#dcfce7',
   red: '#ef4444',
@@ -52,9 +53,10 @@ const P = {
   amberBg: '#fef3c7',
   blue: '#3b82f6',
   blueBg: '#dbeafe',
-  text: '#1e1b4b',
-  textSecondary: '#6b7280',
-  border: '#e9e5f5',
+  text: '#2d3b45',           // dark slate
+  textSecondary: '#6b7f8d',  // muted slate
+  border: '#dce8e6',         // soft teal-gray border
+  footerBg: '#2d3b45',       // dark slate footer
 };
 
 export function TournamentShowcase() {
@@ -80,14 +82,14 @@ export function TournamentShowcase() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: P.bg }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: C.bg }}>
         <div className="text-center">
           <div className="relative w-14 h-14 mx-auto mb-5">
-            <div className="absolute inset-0 rounded-full border-[3px]" style={{ borderColor: P.accentSoft }} />
-            <div className="absolute inset-0 rounded-full border-[3px] border-transparent animate-spin" style={{ borderTopColor: P.accent }} />
-            <Trophy className="w-5 h-5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ color: P.accent }} />
+            <div className="absolute inset-0 rounded-full border-[3px]" style={{ borderColor: C.accentSoft }} />
+            <div className="absolute inset-0 rounded-full border-[3px] border-transparent animate-spin" style={{ borderTopColor: C.accent }} />
+            <Trophy className="w-5 h-5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ color: C.accent }} />
           </div>
-          <p className="text-sm font-medium" style={{ color: P.textSecondary }}>Loading tournament...</p>
+          <p className="text-sm font-medium" style={{ color: C.textSecondary }}>Loading tournament...</p>
         </div>
       </div>
     );
@@ -95,14 +97,14 @@ export function TournamentShowcase() {
 
   if (error || !tournament) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: P.bg }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: C.bg }}>
         <div className="text-center">
-          <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6" style={{ background: P.accentLight }}>
-            <Trophy className="w-10 h-10" style={{ color: P.accent }} />
+          <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6" style={{ background: C.accentLight }}>
+            <Trophy className="w-10 h-10" style={{ color: C.accent }} />
           </div>
-          <h1 className="text-2xl font-bold mb-2" style={{ color: P.text }}>Tournament Not Found</h1>
-          <p className="mb-8" style={{ color: P.textSecondary }}>The tournament you're looking for doesn't exist.</p>
-          <Link to="/pricing" className="inline-flex items-center gap-2 font-semibold transition-colors" style={{ color: P.accent }}>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: C.text }}>Tournament Not Found</h1>
+          <p className="mb-8" style={{ color: C.textSecondary }}>The tournament you're looking for doesn't exist.</p>
+          <Link to="/pricing" className="inline-flex items-center gap-2 font-semibold transition-colors" style={{ color: C.accent }}>
             Go to CricMates <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -111,18 +113,18 @@ export function TournamentShowcase() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: P.bg }}>
+    <div className="min-h-screen" style={{ background: C.bg }}>
       {/* === Nav === */}
-      <nav className="bg-white/90 backdrop-blur-xl sticky top-0 z-50 shadow-sm" style={{ borderBottom: `1px solid ${P.border}` }}>
+      <nav className="bg-white/90 backdrop-blur-xl sticky top-0 z-50 shadow-sm" style={{ borderBottom: `1px solid ${C.border}` }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/pricing" className="hover:opacity-80 transition-opacity">
             <CricMatesLogo size={32} showText textClassName="text-base" />
           </Link>
           <div className="flex items-center gap-2">
-            <Link to="/pricing" className="text-xs font-medium px-3 py-2 rounded-xl transition-colors" style={{ color: P.textSecondary }}>
+            <Link to="/pricing" className="text-xs font-medium px-3 py-2 rounded-xl transition-colors" style={{ color: C.textSecondary }}>
               Pricing
             </Link>
-            <Link to="/" className="text-xs font-bold text-white px-4 py-2 rounded-xl transition-all shadow-lg flex items-center gap-1 hover:shadow-xl" style={{ background: P.accent, boxShadow: '0 4px 14px rgba(124,92,224,0.3)' }}>
+            <Link to="/" className="text-xs font-bold text-white px-4 py-2 rounded-xl transition-all shadow-lg flex items-center gap-1 hover:shadow-xl" style={{ background: C.accent, boxShadow: '0 4px 14px rgba(59,184,172,0.3)' }}>
               Enter App <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -130,10 +132,10 @@ export function TournamentShowcase() {
       </nav>
 
       {/* ========== HERO ========== */}
-      <section className="relative overflow-hidden" style={{ background: P.hero }}>
-        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+      <section className="relative overflow-hidden" style={{ background: C.hero }}>
+        <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4" />
-        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-violet-800/20 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-teal-800/20 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/4" />
 
         <div className="relative max-w-5xl mx-auto px-4 py-14 md:py-20 text-center text-white">
           {tournament.status === 'live' && (
@@ -223,15 +225,15 @@ export function TournamentShowcase() {
 
       {/* ========== POINTS TABLE ========== */}
       <section className="max-w-5xl mx-auto px-4 py-12 md:py-16">
-        <SectionHeader icon={Trophy} label="Points Table" title="Standings" color={P.accent} bgColor={P.accentLight} />
+        <SectionHeader icon={Trophy} label="Points Table" title="Standings" color={C.accent} bgColor={C.accentLight} />
 
-        <div className="bg-white rounded-3xl overflow-hidden shadow-xl" style={{ border: `1px solid ${P.border}` }}>
+        <div className="bg-white rounded-3xl overflow-hidden shadow-xl" style={{ border: `1px solid ${C.border}` }}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px]">
               <thead>
-                <tr style={{ background: P.accentLight }}>
+                <tr style={{ background: C.accentLight }}>
                   {['#', 'Team', 'P', 'W', 'L', 'D', 'Pts', 'NRR', 'Form'].map((h, i) => (
-                    <th key={h} className={`px-3 py-3.5 text-[10px] uppercase tracking-wider font-bold ${i <= 1 ? 'text-left' : 'text-center'} ${h === 'Form' ? 'hidden md:table-cell' : ''}`} style={{ color: P.accent }}>
+                    <th key={h} className={`px-3 py-3.5 text-[10px] uppercase tracking-wider font-bold ${i <= 1 ? 'text-left' : 'text-center'} ${h === 'Form' ? 'hidden md:table-cell' : ''}`} style={{ color: C.accentDark }}>
                       {h}
                     </th>
                   ))}
@@ -241,7 +243,7 @@ export function TournamentShowcase() {
                 {standings.map((row, i) => {
                   const isQ = i < qualifyCount && row.played > 0;
                   return (
-                    <tr key={row.team.id} className="transition-colors hover:bg-violet-50/50" style={{ borderBottom: `1px solid ${P.border}`, background: isQ ? '#f0fdf4' : undefined }}>
+                    <tr key={row.team.id} className="transition-colors hover:bg-teal-50/40" style={{ borderBottom: `1px solid ${C.border}`, background: isQ ? '#f0fdf4' : undefined }}>
                       <td className="px-3 py-3.5">
                         <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-[11px] font-bold ${
                           i === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md' :
@@ -255,17 +257,17 @@ export function TournamentShowcase() {
                           <div className="w-1 h-7 rounded-full shrink-0" style={{ backgroundColor: row.team.primary_color }} />
                           <TeamLogo team={row.team} size="md" />
                           <div>
-                            <span className="font-bold text-sm block" style={{ color: P.text }}>{row.team.name}</span>
+                            <span className="font-bold text-sm block" style={{ color: C.text }}>{row.team.name}</span>
                             {isQ && <span className="text-[9px] text-emerald-600 font-bold uppercase tracking-wider">Qualified</span>}
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3.5 text-center text-sm" style={{ color: P.textSecondary }}>{row.played}</td>
-                      <td className="px-3 py-3.5 text-center text-sm font-bold" style={{ color: P.green }}>{row.won}</td>
-                      <td className="px-3 py-3.5 text-center text-sm font-bold" style={{ color: P.red }}>{row.lost}</td>
-                      <td className="px-3 py-3.5 text-center text-sm" style={{ color: P.textSecondary }}>{row.drawn}</td>
+                      <td className="px-3 py-3.5 text-center text-sm" style={{ color: C.textSecondary }}>{row.played}</td>
+                      <td className="px-3 py-3.5 text-center text-sm font-bold" style={{ color: C.green }}>{row.won}</td>
+                      <td className="px-3 py-3.5 text-center text-sm font-bold" style={{ color: C.red }}>{row.lost}</td>
+                      <td className="px-3 py-3.5 text-center text-sm" style={{ color: C.textSecondary }}>{row.drawn}</td>
                       <td className="px-3 py-3.5 text-center">
-                        <span className="text-lg font-black" style={{ color: P.text }}>{row.points}</span>
+                        <span className="text-lg font-black" style={{ color: C.text }}>{row.points}</span>
                       </td>
                       <td className="px-3 py-3.5 text-center">
                         <span className={`font-mono text-sm font-semibold ${row.nrr > 0 ? 'text-emerald-600' : row.nrr < 0 ? 'text-red-500' : 'text-gray-400'}`}>
@@ -289,8 +291,8 @@ export function TournamentShowcase() {
             </table>
           </div>
           {standings.some(s => s.played > 0) && (
-            <div className="px-5 py-2.5 flex items-center gap-2" style={{ background: P.greenBg, borderTop: '1px solid #bbf7d0' }}>
-              <div className="w-2 h-2 rounded-full" style={{ background: P.green }} />
+            <div className="px-5 py-2.5 flex items-center gap-2" style={{ background: C.greenBg, borderTop: '1px solid #bbf7d0' }}>
+              <div className="w-2 h-2 rounded-full" style={{ background: C.green }} />
               <span className="text-[11px] text-emerald-700 font-semibold">Top {qualifyCount} teams qualify</span>
             </div>
           )}
@@ -305,12 +307,12 @@ export function TournamentShowcase() {
 
             <div className="relative">
               <button onClick={() => scrollRef.current?.scrollBy({ left: -340, behavior: 'smooth' })}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10 w-10 h-10 bg-white shadow-xl rounded-2xl flex items-center justify-center border hover:scale-110 transition-transform hidden md:flex" style={{ borderColor: P.border }}>
-                <ChevronLeft className="w-5 h-5" style={{ color: P.textSecondary }} />
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10 w-10 h-10 bg-white shadow-xl rounded-2xl flex items-center justify-center border hover:scale-110 transition-transform hidden md:flex" style={{ borderColor: C.border }}>
+                <ChevronLeft className="w-5 h-5" style={{ color: C.textSecondary }} />
               </button>
               <button onClick={() => scrollRef.current?.scrollBy({ left: 340, behavior: 'smooth' })}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-10 w-10 h-10 bg-white shadow-xl rounded-2xl flex items-center justify-center border hover:scale-110 transition-transform hidden md:flex" style={{ borderColor: P.border }}>
-                <ChevronRight className="w-5 h-5" style={{ color: P.textSecondary }} />
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-10 w-10 h-10 bg-white shadow-xl rounded-2xl flex items-center justify-center border hover:scale-110 transition-transform hidden md:flex" style={{ borderColor: C.border }}>
+                <ChevronRight className="w-5 h-5" style={{ color: C.textSecondary }} />
               </button>
 
               <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
@@ -319,15 +321,15 @@ export function TournamentShowcase() {
                   return (
                     <div key={fixture.id} className={`min-w-[300px] snap-start rounded-2xl p-4 shrink-0 transition-all ${
                       isLive ? 'bg-red-50 border-2 border-red-200 shadow-lg shadow-red-100/50' : 'bg-white border shadow-md hover:-translate-y-0.5 hover:shadow-lg'
-                    }`} style={isLive ? {} : { borderColor: P.border }}>
+                    }`} style={isLive ? {} : { borderColor: C.border }}>
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-[11px] font-bold" style={{ color: P.textSecondary }}>Match {fixture.match_number}</span>
+                        <span className="text-[11px] font-bold" style={{ color: C.textSecondary }}>Match {fixture.match_number}</span>
                         {isLive ? (
                           <span className="flex items-center gap-1.5 text-[11px] font-bold text-red-600 bg-red-100 px-2.5 py-1 rounded-full">
                             <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /> LIVE
                           </span>
                         ) : (
-                          <span className="text-[11px]" style={{ color: P.textSecondary }}>{formatDate(fixture.date)}</span>
+                          <span className="text-[11px]" style={{ color: C.textSecondary }}>{formatDate(fixture.date)}</span>
                         )}
                       </div>
 
@@ -339,14 +341,14 @@ export function TournamentShowcase() {
                               {(side.team as ShowcaseTeam | undefined)?.short_name || (side.team as ShowcaseTeam | undefined)?.name || 'TBD'}
                             </span>
                           </div>
-                          <span className={`font-bold text-sm tabular-nums ${fixture.winner_team_id === side.id ? 'text-violet-600' : 'text-gray-400'}`}>
+                          <span className={`font-bold text-sm tabular-nums ${fixture.winner_team_id === side.id ? '' : 'text-gray-400'}`} style={fixture.winner_team_id === side.id ? { color: C.accent } : {}}>
                             {side.score || '-'}
                           </span>
                         </div>
                       ))}
 
                       {fixture.result_summary && (
-                        <div className="pt-2.5 border-t" style={{ borderColor: P.border }}>
+                        <div className="pt-2.5 border-t" style={{ borderColor: C.border }}>
                           <p className="text-[11px] text-gray-400 truncate">{fixture.result_summary}</p>
                           {fixture.man_of_match_name && (
                             <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1 font-medium">
@@ -367,13 +369,13 @@ export function TournamentShowcase() {
       {/* ========== ALL FIXTURES ========== */}
       <section className="py-12 md:py-16">
         <div className="max-w-5xl mx-auto px-4">
-          <SectionHeader icon={Calendar} label="Schedule" title="Fixtures & Results" color={P.blue} bgColor={P.blueBg} />
+          <SectionHeader icon={Calendar} label="Schedule" title="Fixtures & Results" color={C.blue} bgColor={C.blueBg} />
 
-          <div className="flex gap-1 justify-center mb-8 bg-white rounded-2xl p-1.5 max-w-xs mx-auto shadow-sm" style={{ border: `1px solid ${P.border}` }}>
+          <div className="flex gap-1 justify-center mb-8 bg-white rounded-2xl p-1.5 max-w-xs mx-auto shadow-sm" style={{ border: `1px solid ${C.border}` }}>
             {(['all', 'completed', 'upcoming'] as const).map(f => (
               <button key={f} onClick={() => setFixtureFilter(f)} className={`flex-1 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 fixtureFilter === f ? 'text-white shadow-md' : 'text-gray-500 hover:text-gray-700'
-              }`} style={fixtureFilter === f ? { background: P.accent, boxShadow: '0 4px 12px rgba(124,92,224,0.25)' } : {}}>
+              }`} style={fixtureFilter === f ? { background: C.accent, boxShadow: '0 4px 12px rgba(59,184,172,0.25)' } : {}}>
                 {f === 'all' ? 'All' : f === 'completed' ? 'Results' : 'Upcoming'}
               </button>
             ))}
@@ -390,7 +392,7 @@ export function TournamentShowcase() {
       {(topPerformers.mostRuns || topPerformers.mostWickets || topPerformers.mvp || awards.momLeaderboard.length > 0 || awards.mostWinsTeam || awards.highestTeamScore) && (
         <section className="py-12 md:py-16">
           <div className="max-w-5xl mx-auto px-4">
-            <SectionHeader icon={Award} label="Awards" title="Tournament Awards" color="#d97706" bgColor={P.amberBg} />
+            <SectionHeader icon={Award} label="Awards" title="Tournament Awards" color="#d97706" bgColor={C.amberBg} />
 
             {/* Player Awards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
@@ -412,31 +414,31 @@ export function TournamentShowcase() {
             {(awards.mostWinsTeam || awards.highestTeamScore) && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
                 {awards.mostWinsTeam && (
-                  <div className="bg-white rounded-2xl p-5 shadow-md" style={{ border: `1px solid ${P.border}` }}>
+                  <div className="bg-white rounded-2xl p-5 shadow-md" style={{ border: `1px solid ${C.border}` }}>
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: P.greenBg }}><Trophy className="w-4 h-4" style={{ color: P.green }} /></div>
-                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: P.green }}>Most Wins</span>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: C.greenBg }}><Trophy className="w-4 h-4" style={{ color: C.green }} /></div>
+                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: C.green }}>Most Wins</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <TeamLogo team={awards.mostWinsTeam.team} size="lg" />
                       <div>
-                        <p className="font-bold" style={{ color: P.text }}>{awards.mostWinsTeam.team.name}</p>
-                        <p className="text-2xl font-black" style={{ color: P.green }}>{awards.mostWinsTeam.wins} wins</p>
+                        <p className="font-bold" style={{ color: C.text }}>{awards.mostWinsTeam.team.name}</p>
+                        <p className="text-2xl font-black" style={{ color: C.green }}>{awards.mostWinsTeam.wins} wins</p>
                       </div>
                     </div>
                   </div>
                 )}
                 {awards.highestTeamScore && (
-                  <div className="bg-white rounded-2xl p-5 shadow-md" style={{ border: `1px solid ${P.border}` }}>
+                  <div className="bg-white rounded-2xl p-5 shadow-md" style={{ border: `1px solid ${C.border}` }}>
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: P.blueBg }}><Target className="w-4 h-4" style={{ color: P.blue }} /></div>
-                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: P.blue }}>Highest Score</span>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: C.blueBg }}><Target className="w-4 h-4" style={{ color: C.blue }} /></div>
+                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: C.blue }}>Highest Score</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <TeamLogo team={awards.highestTeamScore.team} size="lg" />
                       <div>
-                        <p className="font-bold" style={{ color: P.text }}>{awards.highestTeamScore.team.name}</p>
-                        <p className="text-2xl font-black" style={{ color: P.blue }}>{awards.highestTeamScore.score}</p>
+                        <p className="font-bold" style={{ color: C.text }}>{awards.highestTeamScore.team.name}</p>
+                        <p className="text-2xl font-black" style={{ color: C.blue }}>{awards.highestTeamScore.score}</p>
                       </div>
                     </div>
                   </div>
@@ -446,26 +448,26 @@ export function TournamentShowcase() {
 
             {/* MoM Leaderboard */}
             {awards.momLeaderboard.length > 0 && (
-              <div className="bg-white rounded-2xl overflow-hidden shadow-md" style={{ border: `1px solid ${P.border}` }}>
-                <div className="px-5 py-3.5 flex items-center gap-2" style={{ background: P.amberBg, borderBottom: '1px solid #fde68a' }}>
+              <div className="bg-white rounded-2xl overflow-hidden shadow-md" style={{ border: `1px solid ${C.border}` }}>
+                <div className="px-5 py-3.5 flex items-center gap-2" style={{ background: C.amberBg, borderBottom: '1px solid #fde68a' }}>
                   <Star className="w-4 h-4 text-amber-500" />
-                  <h3 className="font-bold text-sm" style={{ color: P.text }}>Man of the Match Leaderboard</h3>
+                  <h3 className="font-bold text-sm" style={{ color: C.text }}>Man of the Match Leaderboard</h3>
                 </div>
                 <div>
                   {awards.momLeaderboard.slice(0, 8).map((entry, i) => (
-                    <div key={entry.name} className="flex items-center justify-between px-5 py-3 hover:bg-violet-50/30 transition-colors" style={{ borderBottom: `1px solid ${P.border}` }}>
+                    <div key={entry.name} className="flex items-center justify-between px-5 py-3 hover:bg-teal-50/30 transition-colors" style={{ borderBottom: `1px solid ${C.border}` }}>
                       <div className="flex items-center gap-3">
                         <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${
                           i === 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
                         }`}>{i + 1}</span>
                         <div>
-                          <p className="font-semibold text-sm" style={{ color: P.text }}>{entry.name}</p>
-                          <p className="text-[11px]" style={{ color: P.textSecondary }}>{entry.teamName}</p>
+                          <p className="font-semibold text-sm" style={{ color: C.text }}>{entry.name}</p>
+                          <p className="text-[11px]" style={{ color: C.textSecondary }}>{entry.teamName}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: entry.teamColor }} />
-                        <span className="font-black text-lg" style={{ color: P.text }}>{entry.count}</span>
+                        <span className="font-black text-lg" style={{ color: C.text }}>{entry.count}</span>
                       </div>
                     </div>
                   ))}
@@ -480,15 +482,15 @@ export function TournamentShowcase() {
       {teamChartData.some(d => d.won > 0 || d.lost > 0) && (
         <section className="py-12 md:py-16">
           <div className="max-w-5xl mx-auto px-4">
-            <SectionHeader icon={BarChart3} label="Analytics" title="Team Performance" color="#7c3aed" bgColor="#ede9fe" />
+            <SectionHeader icon={BarChart3} label="Analytics" title="Team Performance" color={C.accentDark} bgColor={C.accentLight} />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {[
                 { title: 'Wins / Losses / Draws', bars: [{ key: 'won', name: 'Won', fill: '#22c55e' }, { key: 'lost', name: 'Lost', fill: '#ef4444' }, { key: 'drawn', name: 'Drawn', fill: '#f59e0b' }] },
-                { title: 'Runs Scored vs Conceded', bars: [{ key: 'runsScored', name: 'Scored', fill: '#7c5ce0' }, { key: 'runsConceded', name: 'Conceded', fill: '#f43f5e' }] },
+                { title: 'Runs Scored vs Conceded', bars: [{ key: 'runsScored', name: 'Scored', fill: '#3BB8AC' }, { key: 'runsConceded', name: 'Conceded', fill: '#f43f5e' }] },
               ].map(chart => (
-                <div key={chart.title} className="bg-white rounded-2xl p-5 shadow-md" style={{ border: `1px solid ${P.border}` }}>
-                  <h3 className="font-bold text-sm mb-4" style={{ color: P.text }}>{chart.title}</h3>
+                <div key={chart.title} className="bg-white rounded-2xl p-5 shadow-md" style={{ border: `1px solid ${C.border}` }}>
+                  <h3 className="font-bold text-sm mb-4" style={{ color: C.text }}>{chart.title}</h3>
                   <div className="h-60">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={teamChartData} barCategoryGap="20%">
@@ -512,11 +514,11 @@ export function TournamentShowcase() {
       {/* ========== TEAMS ========== */}
       <section className="py-12 md:py-16">
         <div className="max-w-5xl mx-auto px-4">
-          <SectionHeader icon={Shield} label="Participants" title="Teams" color={P.accent} bgColor={P.accentLight} />
+          <SectionHeader icon={Shield} label="Participants" title="Teams" color={C.accent} bgColor={C.accentLight} />
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {teams.map(team => (
-              <div key={team.id} className="group bg-white rounded-2xl p-5 text-center hover:-translate-y-1 transition-all shadow-md hover:shadow-xl" style={{ border: `1px solid ${P.border}` }}>
+              <div key={team.id} className="group bg-white rounded-2xl p-5 text-center hover:-translate-y-1 transition-all shadow-md hover:shadow-xl" style={{ border: `1px solid ${C.border}` }}>
                 <div className="relative w-14 h-14 mx-auto mb-3">
                   {team.logo_url ? (
                     <img src={team.logo_url} alt={team.name} className="w-14 h-14 rounded-2xl object-cover shadow-md" />
@@ -527,8 +529,8 @@ export function TournamentShowcase() {
                   )}
                   <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: team.primary_color }} />
                 </div>
-                <p className="font-bold text-sm mb-0.5" style={{ color: P.text }}>{team.name}</p>
-                {team.captain_name && <p className="text-[11px]" style={{ color: P.textSecondary }}>Capt: {team.captain_name}</p>}
+                <p className="font-bold text-sm mb-0.5" style={{ color: C.text }}>{team.name}</p>
+                {team.captain_name && <p className="text-[11px]" style={{ color: C.textSecondary }}>Capt: {team.captain_name}</p>}
               </div>
             ))}
           </div>
@@ -536,8 +538,8 @@ export function TournamentShowcase() {
       </section>
 
       {/* ========== CTA ========== */}
-      <section className="relative overflow-hidden py-16" style={{ background: P.hero }}>
-        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+      <section className="relative overflow-hidden py-16" style={{ background: C.hero }}>
+        <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         <div className="absolute top-0 left-0 w-80 h-80 bg-white/10 rounded-full blur-[100px]" />
 
         <div className="relative max-w-3xl mx-auto px-4 text-center">
@@ -549,7 +551,7 @@ export function TournamentShowcase() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a href={`https://wa.me/${settings.contact.whatsapp}?text=${encodeURIComponent('Hi, I saw the tournament page and want to start a free trial for my cricket club on CricMates.')}`}
               target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-white font-bold py-3.5 px-7 rounded-2xl hover:bg-violet-50 transition-all text-sm shadow-xl hover:scale-[1.02]" style={{ color: P.accent }}>
+              className="inline-flex items-center justify-center gap-2 bg-white font-bold py-3.5 px-7 rounded-2xl hover:bg-teal-50 transition-all text-sm shadow-xl hover:scale-[1.02]" style={{ color: C.accent }}>
               <MessageCircle className="w-4 h-4" /> Start Free Trial
             </a>
             <Link to="/pricing"
@@ -561,20 +563,20 @@ export function TournamentShowcase() {
       </section>
 
       {/* ========== FOOTER ========== */}
-      <footer className="py-10" style={{ background: '#1e1b4b' }}>
+      <footer className="py-10" style={{ background: C.footerBg }}>
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <CricMatesLogo size={28} className="justify-center mb-2" showText textClassName="text-sm text-violet-200" />
-          <p className="text-xs text-violet-300/40 mb-3">The complete cricket club management platform</p>
+          <CricMatesLogo size={28} className="justify-center mb-2" showText textClassName="text-sm text-teal-200" />
+          <p className="text-xs text-teal-300/40 mb-3">The complete cricket club management platform</p>
           <div className="flex items-center justify-center gap-5 text-xs flex-wrap">
-            <a href={`https://wa.me/${settings.contact.whatsapp}`} target="_blank" rel="noopener noreferrer" className="text-violet-300/50 hover:text-violet-200 transition-colors flex items-center gap-1.5">
+            <a href={`https://wa.me/${settings.contact.whatsapp}`} target="_blank" rel="noopener noreferrer" className="text-teal-300/50 hover:text-teal-200 transition-colors flex items-center gap-1.5">
               <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
             </a>
-            <Link to="/pricing" className="text-violet-300/50 hover:text-violet-200 transition-colors">Pricing</Link>
-            <Link to="/how-it-works" className="text-violet-300/50 hover:text-violet-200 transition-colors">How It Works</Link>
+            <Link to="/pricing" className="text-teal-300/50 hover:text-teal-200 transition-colors">Pricing</Link>
+            <Link to="/how-it-works" className="text-teal-300/50 hover:text-teal-200 transition-colors">How It Works</Link>
           </div>
           {sponsors.length > 0 && (
-            <div className="my-6 py-5 border-t border-b border-violet-800/30">
-              <p className="text-[10px] text-violet-400/30 uppercase tracking-[0.2em] mb-3 font-medium">Tournament Partners</p>
+            <div className="my-6 py-5 border-t border-b border-teal-700/30">
+              <p className="text-[10px] text-teal-400/30 uppercase tracking-[0.2em] mb-3 font-medium">Tournament Partners</p>
               <div className="flex flex-wrap justify-center gap-6 items-center">
                 {sponsors.map(sponsor => (
                   <a key={sponsor.id} href={sponsor.website_url || '#'} target="_blank" rel="noopener noreferrer"
@@ -582,15 +584,15 @@ export function TournamentShowcase() {
                     {sponsor.logo_url ? (
                       <img src={sponsor.logo_url} alt={sponsor.name} className="h-6 object-contain brightness-0 invert" />
                     ) : (
-                      <span className="text-xs font-semibold text-violet-300">{sponsor.name}</span>
+                      <span className="text-xs font-semibold text-teal-300">{sponsor.name}</span>
                     )}
                   </a>
                 ))}
               </div>
             </div>
           )}
-          <div className="mt-6 pt-5 border-t border-violet-800/20">
-            <p className="text-[11px] text-violet-400/25">Powered by CricMates — Built for cricket lovers across India</p>
+          <div className="mt-6 pt-5 border-t border-teal-800/20">
+            <p className="text-[11px] text-teal-400/25">Powered by CricMates — Built for cricket lovers across India</p>
           </div>
         </div>
       </footer>
@@ -605,7 +607,7 @@ function SectionHeader({ icon: Icon, label, title, color, bgColor }: { icon: Rea
       <span className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full mb-3 uppercase tracking-wider" style={{ color, background: bgColor }}>
         <Icon className="w-3.5 h-3.5" style={{ color }} /> {label}
       </span>
-      <h2 className="text-3xl md:text-4xl font-black" style={{ color: '#1e1b4b' }}>{title}</h2>
+      <h2 className="text-3xl md:text-4xl font-black" style={{ color: '#2d3b45' }}>{title}</h2>
     </div>
   );
 }
@@ -615,7 +617,7 @@ function AwardCard({ gradient, emoji, icon, title, name, team, value, unit, deta
   gradient: string; emoji?: string; icon?: React.ReactNode; title: string; name: string; team: string; value: string; unit: string; detail: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all" style={{ border: '1px solid #e9e5f5' }}>
+    <div className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all" style={{ border: `1px solid ${C.border}` }}>
       <div className="flex items-center gap-2 mb-3">
         <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md`}>
           {emoji ? <span className="text-base">{emoji}</span> : icon}
@@ -624,7 +626,7 @@ function AwardCard({ gradient, emoji, icon, title, name, team, value, unit, deta
       </div>
       <p className="text-base font-black text-gray-800">{name}</p>
       <p className="text-[11px] text-gray-400 mb-2">{team}</p>
-      <p className="text-2xl font-black" style={{ color: '#7c5ce0' }}>{value} <span className="text-sm font-semibold text-gray-400">{unit}</span></p>
+      <p className="text-2xl font-black" style={{ color: C.accent }}>{value} <span className="text-sm font-semibold text-gray-400">{unit}</span></p>
       <p className="text-[11px] text-gray-400 mt-1">{detail}</p>
     </div>
   );
@@ -638,8 +640,8 @@ function FixtureCard({ fixture }: { fixture: ShowcaseFixture }) {
   return (
     <div className={`bg-white rounded-2xl overflow-hidden transition-all hover:shadow-lg ${
       isLive ? 'border-2 border-red-200 shadow-lg shadow-red-100/50' : 'border shadow-md'
-    }`} style={isLive ? {} : { borderColor: '#e9e5f5' }}>
-      <div className="px-5 py-2.5 flex items-center justify-between" style={{ background: '#faf8ff', borderBottom: '1px solid #e9e5f5' }}>
+    }`} style={isLive ? {} : { borderColor: C.border }}>
+      <div className="px-5 py-2.5 flex items-center justify-between" style={{ background: '#f5faf9', borderBottom: `1px solid ${C.border}` }}>
         <span className="text-[11px] text-gray-400 font-bold">Match {fixture.match_number}</span>
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-gray-400">{formatDate(fixture.date)} {fixture.time && `| ${fixture.time}`}</span>
@@ -649,7 +651,7 @@ function FixtureCard({ fixture }: { fixture: ShowcaseFixture }) {
             </span>
           )}
           {fixture.status === 'upcoming' && (
-            <span className="text-[10px] font-semibold text-violet-600 bg-violet-100 px-2 py-0.5 rounded-full">Upcoming</span>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ color: C.accentDark, background: C.accentLight }}>Upcoming</span>
           )}
         </div>
       </div>
@@ -662,7 +664,7 @@ function FixtureCard({ fixture }: { fixture: ShowcaseFixture }) {
               <TeamLogo team={fixture.team_a as ShowcaseTeam | undefined} size="md" />
             </div>
             {fixture.team_a_score ? (
-              <p className={`text-xl md:text-2xl font-black tabular-nums ${fixture.winner_team_id === fixture.team_a_id ? 'text-violet-600' : 'text-gray-300'}`}>
+              <p className={`text-xl md:text-2xl font-black tabular-nums ${fixture.winner_team_id === fixture.team_a_id ? '' : 'text-gray-300'}`} style={fixture.winner_team_id === fixture.team_a_id ? { color: C.accent } : {}}>
                 {fixture.team_a_score}
               </p>
             ) : (
@@ -672,8 +674,8 @@ function FixtureCard({ fixture }: { fixture: ShowcaseFixture }) {
 
           <div className="flex-shrink-0 px-2">
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-black ${
-              isCompleted ? 'text-violet-600' : 'text-gray-400'
-            }`} style={{ background: isCompleted ? '#ede9fe' : '#f3f4f6' }}>
+              isCompleted ? '' : 'text-gray-400'
+            }`} style={{ background: isCompleted ? C.accentLight : '#f3f4f6', color: isCompleted ? C.accent : undefined }}>
               {isCompleted ? <Target className="w-4 h-4" /> : 'VS'}
             </div>
           </div>
@@ -684,7 +686,7 @@ function FixtureCard({ fixture }: { fixture: ShowcaseFixture }) {
               <span className="font-bold text-gray-800 text-sm truncate">{fixture.team_b?.name || 'TBD'}</span>
             </div>
             {fixture.team_b_score ? (
-              <p className={`text-xl md:text-2xl font-black tabular-nums ${fixture.winner_team_id === fixture.team_b_id ? 'text-violet-600' : 'text-gray-300'}`}>
+              <p className={`text-xl md:text-2xl font-black tabular-nums ${fixture.winner_team_id === fixture.team_b_id ? '' : 'text-gray-300'}`} style={fixture.winner_team_id === fixture.team_b_id ? { color: C.accent } : {}}>
                 {fixture.team_b_score}
               </p>
             ) : (
@@ -694,7 +696,7 @@ function FixtureCard({ fixture }: { fixture: ShowcaseFixture }) {
         </div>
 
         {fixture.result_summary && (
-          <div className="text-center mt-3 pt-3" style={{ borderTop: '1px solid #e9e5f5' }}>
+          <div className="text-center mt-3 pt-3" style={{ borderTop: `1px solid ${C.border}` }}>
             <p className="text-xs text-gray-500">{fixture.result_summary}</p>
             {fixture.man_of_match_name && (
               <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-amber-600 font-medium">
