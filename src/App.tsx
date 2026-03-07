@@ -20,6 +20,7 @@ import { About } from './pages/About';
 import { Feedback } from './pages/Feedback';
 import { Payment } from './pages/Payment';
 import { InstallPrompt } from './components/InstallPrompt';
+import { TournamentShowcase } from './pages/TournamentShowcase';
 
 function AppContent() {
   const { club, loading } = useClub();
@@ -82,6 +83,7 @@ function App() {
           <Route path="/super-admin" element={<SuperAdmin />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/tournament/:slug" element={<TournamentShowcase />} />
 
           {/* All other routes - inside club context */}
           <Route path="/*" element={

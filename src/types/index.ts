@@ -210,3 +210,112 @@ export interface PlatformSettings {
   pricing: PlatformPricing;
   contact: PlatformContact;
 }
+
+// === Showcase Tournament Types ===
+
+export interface ShowcaseTournament {
+  id: string;
+  slug: string;
+  name: string;
+  short_name: string | null;
+  format: string;
+  overs: number;
+  venue: string;
+  venue_address: string | null;
+  start_date: string;
+  end_date: string | null;
+  status: 'upcoming' | 'ongoing' | 'completed';
+  total_teams: number;
+  stage_type: 'round_robin' | 'knockout' | 'group_knockout';
+  points_win: number;
+  points_loss: number;
+  points_draw: number;
+  points_nr: number;
+  banner_image_url: string | null;
+  organizer_name: string | null;
+  organizer_logo_url: string | null;
+  prize_info: { first?: string; second?: string; third?: string } | null;
+  rules: string | null;
+  created_at: string;
+}
+
+export interface ShowcaseTeam {
+  id: string;
+  tournament_id: string;
+  name: string;
+  short_name: string | null;
+  logo_url: string | null;
+  primary_color: string;
+  captain_name: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface ShowcaseFixture {
+  id: string;
+  tournament_id: string;
+  match_number: number;
+  team_a_id: string;
+  team_b_id: string;
+  date: string | null;
+  time: string | null;
+  venue: string | null;
+  status: 'upcoming' | 'live' | 'completed' | 'no_result' | 'cancelled';
+  team_a_score: string | null;
+  team_a_runs: number | null;
+  team_a_wickets: number | null;
+  team_a_overs_faced: number | null;
+  team_b_score: string | null;
+  team_b_runs: number | null;
+  team_b_wickets: number | null;
+  team_b_overs_faced: number | null;
+  winner_team_id: string | null;
+  result_summary: string | null;
+  toss_winner_team_id: string | null;
+  toss_decision: 'bat' | 'bowl' | null;
+  man_of_match_name: string | null;
+  man_of_match_team_id: string | null;
+  highlights: string | null;
+  created_at: string;
+  team_a?: ShowcaseTeam;
+  team_b?: ShowcaseTeam;
+  winner_team?: ShowcaseTeam;
+}
+
+export interface ShowcasePlayerStat {
+  id: string;
+  tournament_id: string;
+  fixture_id: string;
+  team_id: string;
+  player_name: string;
+  runs_scored: number;
+  balls_faced: number;
+  fours: number;
+  sixes: number;
+  not_out: boolean;
+  overs_bowled: number;
+  runs_conceded: number;
+  wickets_taken: number;
+  maidens: number;
+  catches: number;
+  run_outs: number;
+  stumpings: number;
+  is_man_of_match: boolean;
+  created_at: string;
+}
+
+export interface TeamStanding {
+  team: ShowcaseTeam;
+  played: number;
+  won: number;
+  lost: number;
+  drawn: number;
+  noResult: number;
+  points: number;
+  nrr: number;
+  runsScored: number;
+  oversFaced: number;
+  runsConceded: number;
+  oversBowled: number;
+  lastFive: ('W' | 'L' | 'D' | 'NR')[];
+}

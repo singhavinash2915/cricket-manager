@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, SUPER_ADMIN_PASSWORD } from '../lib/supabase';
-import type { Club, SubscriptionOrder } from '../types';
+import type { Club, SubscriptionOrder, ShowcaseTournament, ShowcaseTeam, ShowcaseFixture } from '../types';
 import { Button } from '../components/ui/Button';
 import { Input, TextArea, Select } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
@@ -8,7 +8,7 @@ import {
   Plus, Users, MapPin, Edit, Trash2, Lock, LogOut,
   CheckCircle, XCircle, Clock, Eye, DollarSign, CalendarPlus,
   Receipt, AlertCircle, Upload, X, TrendingUp, CreditCard,
-  Globe, Search, ChevronRight, Zap, IndianRupee
+  Globe, Search, ChevronRight, Zap, IndianRupee, Trophy, Save
 } from 'lucide-react';
 
 
@@ -26,11 +26,19 @@ export function SuperAdmin() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingClub, setEditingClub] = useState<Club | null>(null);
-  const [activeTab, setActiveTab] = useState<'clubs' | 'payments'>('clubs');
+  const [activeTab, setActiveTab] = useState<'clubs' | 'payments' | 'showcases'>('clubs');
   const [subscriptionOrders, setSubscriptionOrders] = useState<(SubscriptionOrder & { club?: { name: string; short_name: string } })[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'trial' | 'expired'>('all');
+
+  // Showcase state
+  const [showcaseTournaments, setShowcaseTournaments] = useState<ShowcaseTournament[]>([]);
+  const [showcaseTeams, setShowcaseTeams] = useState<ShowcaseTeam[]>([]);
+  const [showcaseFixtures, setShowcaseFixtures] = useState<ShowcaseFixture[]>([]);
+  const [editingFixture, setEditingFixture] = useState<ShowcaseFixture | null>(null);
+  const [fixtureForm, setFixtureForm] = useState({ team_a_score: '', team_a_runs: '', team_a_wickets: '', team_a_overs_faced: '', team_b_score: '', team_b_runs: '', team_b_wickets: '', team_b_overs_faced: '', winner_team_id: '', result_summary: '', man_of_match_name: '', status: 'upcoming' as string });
+  const [savingFixture, setSavingFixture] = useState(false);
 
   // Payment modal state
   const [paymentClub, setPaymentClub] = useState<Club | null>(null);
@@ -105,6 +113,35 @@ export function SuperAdmin() {
     }
   }, []);
 
+  const fetchShowcaseData = useCallback(async () => {
+    try {
+      const { data: tournaments } = await supabase
+        .from('showcase_tournaments')
+        .select('*')
+        .order('created_at', { ascending: false });
+      setShowcaseTournaments(tournaments || []);
+
+      if (tournaments && tournaments.length > 0) {
+        const tournamentIds = tournaments.map(t => t.id);
+        const { data: teamsData } = await supabase
+          .from('showcase_teams')
+          .select('*')
+          .in('tournament_id', tournamentIds)
+          .order('sort_order');
+        setShowcaseTeams(teamsData || []);
+
+        const { data: fixturesData } = await supabase
+          .from('showcase_fixtures')
+          .select('*, team_a:team_a_id(*), team_b:team_b_id(*), winner_team:winner_team_id(*)')
+          .in('tournament_id', tournamentIds)
+          .order('match_number');
+        setShowcaseFixtures(fixturesData || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch showcase data:', err);
+    }
+  }, []);
+
   const fetchSubscriptionOrders = useCallback(async () => {
     try {
       setLoadingOrders(true);
@@ -126,8 +163,9 @@ export function SuperAdmin() {
     if (isAuthenticated) {
       fetchClubs();
       fetchSubscriptionOrders();
+      fetchShowcaseData();
     }
-  }, [isAuthenticated, fetchClubs, fetchSubscriptionOrders]);
+  }, [isAuthenticated, fetchClubs, fetchSubscriptionOrders, fetchShowcaseData]);
 
   const handleLogin = () => {
     if (password === SUPER_ADMIN_PASSWORD) {
@@ -532,6 +570,59 @@ export function SuperAdmin() {
     return matchesSearch && matchesStatus;
   });
 
+  const openFixtureEditor = (fixture: ShowcaseFixture) => {
+    setEditingFixture(fixture);
+    setFixtureForm({
+      team_a_score: fixture.team_a_score || '',
+      team_a_runs: fixture.team_a_runs?.toString() || '',
+      team_a_wickets: fixture.team_a_wickets?.toString() || '',
+      team_a_overs_faced: fixture.team_a_overs_faced?.toString() || '',
+      team_b_score: fixture.team_b_score || '',
+      team_b_runs: fixture.team_b_runs?.toString() || '',
+      team_b_wickets: fixture.team_b_wickets?.toString() || '',
+      team_b_overs_faced: fixture.team_b_overs_faced?.toString() || '',
+      winner_team_id: fixture.winner_team_id || '',
+      result_summary: fixture.result_summary || '',
+      man_of_match_name: fixture.man_of_match_name || '',
+      status: fixture.status,
+    });
+  };
+
+  const handleSaveFixture = async () => {
+    if (!editingFixture) return;
+    setSavingFixture(true);
+    try {
+      const updateData: Record<string, unknown> = {
+        status: fixtureForm.status,
+        team_a_score: fixtureForm.team_a_score || null,
+        team_a_runs: fixtureForm.team_a_runs ? Number(fixtureForm.team_a_runs) : null,
+        team_a_wickets: fixtureForm.team_a_wickets ? Number(fixtureForm.team_a_wickets) : null,
+        team_a_overs_faced: fixtureForm.team_a_overs_faced ? Number(fixtureForm.team_a_overs_faced) : null,
+        team_b_score: fixtureForm.team_b_score || null,
+        team_b_runs: fixtureForm.team_b_runs ? Number(fixtureForm.team_b_runs) : null,
+        team_b_wickets: fixtureForm.team_b_wickets ? Number(fixtureForm.team_b_wickets) : null,
+        team_b_overs_faced: fixtureForm.team_b_overs_faced ? Number(fixtureForm.team_b_overs_faced) : null,
+        winner_team_id: fixtureForm.winner_team_id || null,
+        result_summary: fixtureForm.result_summary || null,
+        man_of_match_name: fixtureForm.man_of_match_name || null,
+      };
+
+      const { error } = await supabase
+        .from('showcase_fixtures')
+        .update(updateData)
+        .eq('id', editingFixture.id);
+
+      if (error) throw error;
+      setEditingFixture(null);
+      await fetchShowcaseData();
+    } catch (err) {
+      console.error('Failed to save fixture:', err);
+      alert(`Failed to save: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setSavingFixture(false);
+    }
+  };
+
   const clubForm = (
     <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
       {/* Club Logo Upload */}
@@ -714,6 +805,17 @@ export function SuperAdmin() {
             >
               <CreditCard className="w-4 h-4" />
               Payments ({subscriptionOrders.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('showcases')}
+              className={`flex items-center gap-2 py-2 px-5 rounded-lg text-sm font-semibold transition-all ${
+                activeTab === 'showcases'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Trophy className="w-4 h-4" />
+              Showcases ({showcaseTournaments.length})
             </button>
           </div>
 
@@ -967,6 +1069,126 @@ export function SuperAdmin() {
           )
         )}
 
+        {/* Showcases Tab */}
+        {activeTab === 'showcases' && (
+          showcaseTournaments.length === 0 ? (
+            <div className="text-center py-20">
+              <Trophy className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+              <h3 className="font-bold text-slate-400 mb-1">No showcase tournaments</h3>
+              <p className="text-slate-600 text-sm">Create tournaments via Supabase SQL editor</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {showcaseTournaments.map(tournament => {
+                const tournamentTeams = showcaseTeams.filter(t => t.tournament_id === tournament.id);
+                const tournamentFixtures = showcaseFixtures.filter(f => f.tournament_id === tournament.id);
+
+                return (
+                  <div key={tournament.id} className="bg-white/[0.03] backdrop-blur-sm rounded-2xl border border-white/5 p-6">
+                    {/* Tournament header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-white">{tournament.name}</h3>
+                        <p className="text-sm text-slate-400">
+                          {tournament.format} · {tournament.overs} overs · {tournament.venue}
+                          <span className={`ml-2 text-xs font-bold px-2 py-0.5 rounded-full ${
+                            tournament.status === 'ongoing' ? 'bg-emerald-500/20 text-emerald-400' :
+                            tournament.status === 'completed' ? 'bg-slate-500/20 text-slate-400' :
+                            'bg-amber-500/20 text-amber-400'
+                          }`}>
+                            {tournament.status.toUpperCase()}
+                          </span>
+                        </p>
+                      </div>
+                      <a
+                        href={`/tournament/${tournament.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> View Page
+                      </a>
+                    </div>
+
+                    {/* Teams row */}
+                    <div className="flex flex-wrap gap-2 mb-5">
+                      {tournamentTeams.map(team => (
+                        <span
+                          key={team.id}
+                          className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border border-white/10"
+                          style={{ backgroundColor: team.primary_color + '20', color: team.primary_color }}
+                        >
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: team.primary_color }} />
+                          {team.name}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Fixtures list */}
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-bold text-slate-300 mb-3">Fixtures ({tournamentFixtures.length})</h4>
+                      {tournamentFixtures.map(fixture => {
+                        const teamA = fixture.team_a as ShowcaseTeam | undefined;
+                        const teamB = fixture.team_b as ShowcaseTeam | undefined;
+
+                        return (
+                          <div
+                            key={fixture.id}
+                            className="flex items-center justify-between bg-white/[0.03] rounded-xl border border-white/5 p-3 hover:bg-white/[0.05] transition-all"
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <span className="text-[10px] font-bold text-slate-600 w-6 text-center shrink-0">
+                                #{fixture.match_number}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-semibold text-sm text-white">
+                                    {teamA?.name || 'TBA'}
+                                  </span>
+                                  {fixture.team_a_score && (
+                                    <span className="text-xs font-bold text-emerald-400">{fixture.team_a_score}</span>
+                                  )}
+                                  <span className="text-xs text-slate-600">vs</span>
+                                  <span className="font-semibold text-sm text-white">
+                                    {teamB?.name || 'TBA'}
+                                  </span>
+                                  {fixture.team_b_score && (
+                                    <span className="text-xs font-bold text-emerald-400">{fixture.team_b_score}</span>
+                                  )}
+                                </div>
+                                {fixture.result_summary && (
+                                  <p className="text-[11px] text-slate-500 mt-0.5">{fixture.result_summary}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                fixture.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' :
+                                fixture.status === 'live' ? 'bg-rose-500/20 text-rose-400' :
+                                fixture.status === 'no_result' ? 'bg-slate-500/20 text-slate-400' :
+                                'bg-amber-500/20 text-amber-400'
+                              }`}>
+                                {fixture.status === 'no_result' ? 'NR' : fixture.status.toUpperCase()}
+                              </span>
+                              <button
+                                onClick={() => openFixtureEditor(fixture)}
+                                className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                                title="Update Score"
+                              >
+                                <Edit className="w-3.5 h-3.5 text-slate-400" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
+        )}
+
         {/* Bottom spacing */}
         <div className="h-8" />
       </div>
@@ -1124,6 +1346,142 @@ export function SuperAdmin() {
           <Button variant="secondary" onClick={() => { setPaymentClub(null); setSelectedPayments(new Set()); }}>Cancel</Button>
           <Button onClick={handleRecordPayment} disabled={paymentLoading || selectedPayments.size === 0}>
             {paymentLoading ? 'Processing...' : `Record ₹${getSelectedTotal().toLocaleString()}`}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Fixture Score Modal */}
+      <Modal isOpen={!!editingFixture} onClose={() => setEditingFixture(null)} title={`Match #${editingFixture?.match_number || ''} — Update Score`} size="xl">
+        {editingFixture && (
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+            {/* Match info */}
+            <div className="flex items-center justify-center gap-3 bg-gray-50 dark:bg-gray-700/30 rounded-xl p-3">
+              <span className="font-bold text-gray-900 dark:text-white">
+                {(editingFixture.team_a as ShowcaseTeam | undefined)?.name || 'Team A'}
+              </span>
+              <span className="text-xs text-gray-400 font-semibold">VS</span>
+              <span className="font-bold text-gray-900 dark:text-white">
+                {(editingFixture.team_b as ShowcaseTeam | undefined)?.name || 'Team B'}
+              </span>
+            </div>
+
+            {/* Status */}
+            <Select
+              label="Status"
+              value={fixtureForm.status}
+              onChange={e => setFixtureForm(f => ({ ...f, status: e.target.value }))}
+              options={[
+                { value: 'upcoming', label: 'Upcoming' },
+                { value: 'live', label: 'Live' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'no_result', label: 'No Result' },
+                { value: 'cancelled', label: 'Cancelled' },
+              ]}
+            />
+
+            {/* Team A Score */}
+            <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4">
+              <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                {(editingFixture.team_a as ShowcaseTeam | undefined)?.name || 'Team A'} Score
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="Display Score"
+                  placeholder="145/6 (15)"
+                  value={fixtureForm.team_a_score}
+                  onChange={e => setFixtureForm(f => ({ ...f, team_a_score: e.target.value }))}
+                />
+                <Input
+                  label="Runs"
+                  type="number"
+                  placeholder="145"
+                  value={fixtureForm.team_a_runs}
+                  onChange={e => setFixtureForm(f => ({ ...f, team_a_runs: e.target.value }))}
+                />
+                <Input
+                  label="Wickets"
+                  type="number"
+                  placeholder="6"
+                  value={fixtureForm.team_a_wickets}
+                  onChange={e => setFixtureForm(f => ({ ...f, team_a_wickets: e.target.value }))}
+                />
+                <Input
+                  label="Overs Faced"
+                  type="number"
+                  placeholder="15.0"
+                  value={fixtureForm.team_a_overs_faced}
+                  onChange={e => setFixtureForm(f => ({ ...f, team_a_overs_faced: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Team B Score */}
+            <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4">
+              <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                {(editingFixture.team_b as ShowcaseTeam | undefined)?.name || 'Team B'} Score
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="Display Score"
+                  placeholder="132/8 (15)"
+                  value={fixtureForm.team_b_score}
+                  onChange={e => setFixtureForm(f => ({ ...f, team_b_score: e.target.value }))}
+                />
+                <Input
+                  label="Runs"
+                  type="number"
+                  placeholder="132"
+                  value={fixtureForm.team_b_runs}
+                  onChange={e => setFixtureForm(f => ({ ...f, team_b_runs: e.target.value }))}
+                />
+                <Input
+                  label="Wickets"
+                  type="number"
+                  placeholder="8"
+                  value={fixtureForm.team_b_wickets}
+                  onChange={e => setFixtureForm(f => ({ ...f, team_b_wickets: e.target.value }))}
+                />
+                <Input
+                  label="Overs Faced"
+                  type="number"
+                  placeholder="15.0"
+                  value={fixtureForm.team_b_overs_faced}
+                  onChange={e => setFixtureForm(f => ({ ...f, team_b_overs_faced: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Winner + Result */}
+            <Select
+              label="Winner"
+              value={fixtureForm.winner_team_id}
+              onChange={e => setFixtureForm(f => ({ ...f, winner_team_id: e.target.value }))}
+              options={[
+                { value: '', label: 'Select Winner' },
+                { value: editingFixture.team_a_id, label: (editingFixture.team_a as ShowcaseTeam | undefined)?.name || 'Team A' },
+                { value: editingFixture.team_b_id, label: (editingFixture.team_b as ShowcaseTeam | undefined)?.name || 'Team B' },
+              ]}
+            />
+
+            <Input
+              label="Result Summary"
+              placeholder="Team A won by 13 runs"
+              value={fixtureForm.result_summary}
+              onChange={e => setFixtureForm(f => ({ ...f, result_summary: e.target.value }))}
+            />
+
+            <Input
+              label="Man of the Match"
+              placeholder="Player Name"
+              value={fixtureForm.man_of_match_name}
+              onChange={e => setFixtureForm(f => ({ ...f, man_of_match_name: e.target.value }))}
+            />
+          </div>
+        )}
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <Button variant="secondary" onClick={() => setEditingFixture(null)}>Cancel</Button>
+          <Button onClick={handleSaveFixture} disabled={savingFixture}>
+            <Save className="w-4 h-4" /> {savingFixture ? 'Saving...' : 'Save Score'}
           </Button>
         </div>
       </Modal>
