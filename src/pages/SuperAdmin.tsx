@@ -1492,7 +1492,7 @@ export function SuperAdmin() {
                         <p className="text-sm text-slate-400">
                           {tournament.format} · {tournament.overs} overs · {tournament.venue}
                           <span className={`ml-2 text-xs font-bold px-2 py-0.5 rounded-full ${
-                            tournament.status === 'ongoing' ? 'bg-emerald-500/20 text-emerald-400' :
+                            tournament.status === 'live' ? 'bg-emerald-500/20 text-emerald-400' :
                             tournament.status === 'completed' ? 'bg-slate-500/20 text-slate-400' :
                             'bg-amber-500/20 text-amber-400'
                           }`}>

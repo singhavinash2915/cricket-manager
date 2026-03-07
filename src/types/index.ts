@@ -224,9 +224,9 @@ export interface ShowcaseTournament {
   venue_address: string | null;
   start_date: string;
   end_date: string | null;
-  status: 'upcoming' | 'ongoing' | 'completed';
+  status: 'upcoming' | 'live' | 'completed';
   total_teams: number;
-  stage_type: 'round_robin' | 'knockout' | 'group_knockout';
+  stage_type: 'round_robin' | 'knockout' | 'group_stage';
   points_win: number;
   points_loss: number;
   points_draw: number;
