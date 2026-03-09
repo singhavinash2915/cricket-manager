@@ -122,64 +122,75 @@ CREATE POLICY "Anon manage showcase_player_stats" ON showcase_player_stats FOR A
 -- Seed Data: SCCL Tournament
 -- =============================================
 
-INSERT INTO showcase_tournaments (slug, name, short_name, format, overs, venue, venue_address, start_date, status, total_teams, organizer_name)
-VALUES ('sccl', 'Sangria Cricket Club Champions League', 'SCCL', 'Tennis Ball', 15, 'Four Star Ground', 'Hinjewadi Phase 2, Pune', '2026-03-15', 'upcoming', 5, 'Sangria Cricket Club');
+INSERT INTO showcase_tournaments (slug, name, short_name, format, overs, venue, venue_address, start_date, end_date, status, total_teams, organizer_name, rules)
+VALUES ('sccl', 'Sangria Cricket Club Champions League', 'SCCL', 'Tennis Ball', 15, 'Four Star Ground', 'Hinjewadi Phase 2, Pune', '2026-04-01', '2026-04-30', 'upcoming', 5, 'Limitless Criset Academy', 'Qualifier: 28th April | Final: 30th April');
 
--- Insert 5 teams (placeholder names — update with real names later)
+-- Insert 5 teams
 INSERT INTO showcase_teams (tournament_id, name, short_name, primary_color, sort_order) VALUES
-((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'Sangria Strikers', 'SS', '#dc2626', 1),
-((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'Hinjewadi Hawks', 'HH', '#2563eb', 2),
-((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'Phase 2 Panthers', 'P2P', '#7c3aed', 3),
-((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'Wakad Warriors', 'WW', '#ea580c', 4),
-((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'Baner Bulls', 'BB', '#059669', 5);
+((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'All Whites', 'AW', '#f8fafc', 1),
+((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'SCC', 'SCC', '#dc2626', 2),
+((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'Bujurg XI', 'BXI', '#2563eb', 3),
+((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'Yashwin Stars', 'YS', '#7c3aed', 4),
+((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'Overtime Hitters', 'OH', '#ea580c', 5);
 
--- Insert 10 round-robin fixtures (5C2 = 10 matches)
--- Round 1
+-- Insert 10 league fixtures + Qualifier + Final
 INSERT INTO showcase_fixtures (tournament_id, match_number, team_a_id, team_b_id, date, time) VALUES
+-- Match 1: 1 Apr (Wed)
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 1,
- (SELECT id FROM showcase_teams WHERE short_name = 'SS' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- (SELECT id FROM showcase_teams WHERE short_name = 'HH' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- '2026-03-15', '4:00 PM'),
+ (SELECT id FROM showcase_teams WHERE short_name = 'AW' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ (SELECT id FROM showcase_teams WHERE short_name = 'BXI' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ '2026-04-01', '6:45 AM'),
+-- Match 2: 2 Apr (Thu)
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 2,
- (SELECT id FROM showcase_teams WHERE short_name = 'P2P' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- (SELECT id FROM showcase_teams WHERE short_name = 'WW' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- '2026-03-15', '6:00 PM'),
--- Round 2
+ (SELECT id FROM showcase_teams WHERE short_name = 'SCC' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ (SELECT id FROM showcase_teams WHERE short_name = 'YS' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ '2026-04-02', '6:45 AM'),
+-- Match 3: 7 Apr (Tue)
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 3,
- (SELECT id FROM showcase_teams WHERE short_name = 'BB' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- (SELECT id FROM showcase_teams WHERE short_name = 'SS' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- '2026-03-16', '4:00 PM'),
+ (SELECT id FROM showcase_teams WHERE short_name = 'SCC' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ (SELECT id FROM showcase_teams WHERE short_name = 'OH' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ '2026-04-07', '6:45 AM'),
+-- Match 4: 8 Apr (Wed)
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 4,
- (SELECT id FROM showcase_teams WHERE short_name = 'HH' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- (SELECT id FROM showcase_teams WHERE short_name = 'P2P' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- '2026-03-16', '6:00 PM'),
--- Round 3
+ (SELECT id FROM showcase_teams WHERE short_name = 'AW' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ (SELECT id FROM showcase_teams WHERE short_name = 'YS' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ '2026-04-08', '6:45 AM'),
+-- Match 5: 9 Apr (Thu)
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 5,
- (SELECT id FROM showcase_teams WHERE short_name = 'WW' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- (SELECT id FROM showcase_teams WHERE short_name = 'BB' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- '2026-03-22', '4:00 PM'),
+ (SELECT id FROM showcase_teams WHERE short_name = 'OH' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ (SELECT id FROM showcase_teams WHERE short_name = 'BXI' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ '2026-04-09', '6:45 AM'),
+-- Match 6: 15 Apr (Wed)
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 6,
- (SELECT id FROM showcase_teams WHERE short_name = 'SS' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- (SELECT id FROM showcase_teams WHERE short_name = 'P2P' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- '2026-03-22', '6:00 PM'),
--- Round 4
+ (SELECT id FROM showcase_teams WHERE short_name = 'AW' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ (SELECT id FROM showcase_teams WHERE short_name = 'OH' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ '2026-04-15', '6:45 AM'),
+-- Match 7: 16 Apr (Thu)
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 7,
- (SELECT id FROM showcase_teams WHERE short_name = 'HH' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- (SELECT id FROM showcase_teams WHERE short_name = 'WW' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- '2026-03-23', '4:00 PM'),
+ (SELECT id FROM showcase_teams WHERE short_name = 'SCC' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ (SELECT id FROM showcase_teams WHERE short_name = 'BXI' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ '2026-04-16', '6:45 AM'),
+-- Match 8: 21 Apr (Tue)
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 8,
- (SELECT id FROM showcase_teams WHERE short_name = 'BB' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- (SELECT id FROM showcase_teams WHERE short_name = 'P2P' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- '2026-03-23', '6:00 PM'),
--- Round 5
+ (SELECT id FROM showcase_teams WHERE short_name = 'YS' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ (SELECT id FROM showcase_teams WHERE short_name = 'OH' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ '2026-04-21', '6:45 AM'),
+-- Match 9: 22 Apr (Wed)
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 9,
- (SELECT id FROM showcase_teams WHERE short_name = 'SS' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- (SELECT id FROM showcase_teams WHERE short_name = 'WW' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- '2026-03-29', '4:00 PM'),
+ (SELECT id FROM showcase_teams WHERE short_name = 'SCC' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ (SELECT id FROM showcase_teams WHERE short_name = 'AW' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ '2026-04-22', '6:45 AM'),
+-- Match 10: 23 Apr (Thu)
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 10,
- (SELECT id FROM showcase_teams WHERE short_name = 'HH' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- (SELECT id FROM showcase_teams WHERE short_name = 'BB' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
- '2026-03-29', '6:00 PM');
+ (SELECT id FROM showcase_teams WHERE short_name = 'BXI' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ (SELECT id FROM showcase_teams WHERE short_name = 'YS' AND tournament_id = (SELECT id FROM showcase_tournaments WHERE slug = 'sccl')),
+ '2026-04-23', '6:45 AM');
+-- Qualifier (28 Apr) and Final (30 Apr) will be added via SuperAdmin once league stage completes
+
+-- Insert sponsors
+INSERT INTO showcase_sponsors (tournament_id, name, tier, sort_order) VALUES
+((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'CA India - Aprmay Kumar & Associates', 'powered_by', 1),
+((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'Limitless Criset Academy', 'title', 2);
 
 -- Table 5: showcase_sponsors
 CREATE TABLE showcase_sponsors (
