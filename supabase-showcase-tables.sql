@@ -99,6 +99,18 @@ CREATE TABLE showcase_player_stats (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Table 5: showcase_sponsors
+CREATE TABLE showcase_sponsors (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  tournament_id UUID NOT NULL REFERENCES showcase_tournaments(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  logo_url TEXT,
+  website_url TEXT,
+  tier TEXT NOT NULL DEFAULT 'partner' CHECK (tier IN ('title', 'powered_by', 'gold', 'silver', 'partner')),
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- =============================================
 -- RLS Policies: Public read, anon full access
 -- =============================================
@@ -107,16 +119,19 @@ ALTER TABLE showcase_tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE showcase_teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE showcase_fixtures ENABLE ROW LEVEL SECURITY;
 ALTER TABLE showcase_player_stats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE showcase_sponsors ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public read showcase_tournaments" ON showcase_tournaments FOR SELECT USING (true);
 CREATE POLICY "Public read showcase_teams" ON showcase_teams FOR SELECT USING (true);
 CREATE POLICY "Public read showcase_fixtures" ON showcase_fixtures FOR SELECT USING (true);
 CREATE POLICY "Public read showcase_player_stats" ON showcase_player_stats FOR SELECT USING (true);
+CREATE POLICY "Public read showcase_sponsors" ON showcase_sponsors FOR SELECT USING (true);
 
 CREATE POLICY "Anon manage showcase_tournaments" ON showcase_tournaments FOR ALL USING (true);
 CREATE POLICY "Anon manage showcase_teams" ON showcase_teams FOR ALL USING (true);
 CREATE POLICY "Anon manage showcase_fixtures" ON showcase_fixtures FOR ALL USING (true);
 CREATE POLICY "Anon manage showcase_player_stats" ON showcase_player_stats FOR ALL USING (true);
+CREATE POLICY "Anon manage showcase_sponsors" ON showcase_sponsors FOR ALL USING (true);
 
 -- =============================================
 -- Seed Data: SCCL Tournament
@@ -133,7 +148,7 @@ INSERT INTO showcase_teams (tournament_id, name, short_name, primary_color, sort
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'Yashwin Stars', 'YS', '#7c3aed', 4),
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'Overtime Hitters', 'OH', '#ea580c', 5);
 
--- Insert 10 league fixtures + Qualifier + Final
+-- Insert 10 league fixtures
 INSERT INTO showcase_fixtures (tournament_id, match_number, team_a_id, team_b_id, date, time) VALUES
 -- Match 1: 1 Apr (Wed)
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 1,
@@ -191,19 +206,3 @@ INSERT INTO showcase_fixtures (tournament_id, match_number, team_a_id, team_b_id
 INSERT INTO showcase_sponsors (tournament_id, name, tier, sort_order) VALUES
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'CA India - Aprmay Kumar & Associates', 'powered_by', 1),
 ((SELECT id FROM showcase_tournaments WHERE slug = 'sccl'), 'Limitless Criset Academy', 'title', 2);
-
--- Table 5: showcase_sponsors
-CREATE TABLE showcase_sponsors (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  tournament_id UUID NOT NULL REFERENCES showcase_tournaments(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  logo_url TEXT,
-  website_url TEXT,
-  tier TEXT NOT NULL DEFAULT 'partner' CHECK (tier IN ('title', 'powered_by', 'gold', 'silver', 'partner')),
-  sort_order INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE showcase_sponsors ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public read showcase_sponsors" ON showcase_sponsors FOR SELECT USING (true);
-CREATE POLICY "Anon manage showcase_sponsors" ON showcase_sponsors FOR ALL USING (true);
